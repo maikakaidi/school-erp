@@ -1,0 +1,43 @@
+{
+  "name": "api-school-backend",
+  "version": "2.0.0",
+  "description": "API SaaS scolaire multi-établissements - API-SCHOOL",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "node prisma/seed.js",
+    "prisma:studio": "prisma studio",
+    "test": "node --test src/__tests__/*.test.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop api-school",
+    "pm2:restart": "pm2 restart api-school",
+    "pm2:logs": "pm2 logs api-school",
+    "pm2:prod": "pm2 start ecosystem.config.js --env production"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.8.0",
+    "adm-zip": "^0.5.17",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.14.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0",
+    "winston": "^3.11.0",
+    "xlsx": "^0.18.5",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "prisma": "^5.8.0"
+  }
+}

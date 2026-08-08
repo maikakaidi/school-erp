@@ -1,0 +1,64 @@
+import * as saService from './superAdmin.service.js';
+
+export const getAllSchools = async (req, res, next) => {
+  try {
+    const schools = await saService.getAllSchools();
+    res.json(schools);
+  } catch (error) { next(error); }
+};
+
+export const getDashboardStats = async (req, res, next) => {
+  try {
+    const stats = await saService.getDashboardStats();
+    res.json(stats);
+  } catch (error) { next(error); }
+};
+
+export const activateSchool = async (req, res, next) => {
+  try {
+    const school = await saService.activateSchool(req.params.id);
+    res.json({ message: 'École activée avec succès', school });
+  } catch (error) { next(error); }
+};
+
+export const deactivateSchool = async (req, res, next) => {
+  try {
+    const school = await saService.deactivateSchool(req.params.id);
+    res.json({ message: 'École désactivée', school });
+  } catch (error) { next(error); }
+};
+
+export const renewSchool = async (req, res, next) => {
+  try {
+    const days = req.body.days || 365;
+    const school = await saService.renewSchool(req.params.id, days);
+    res.json({ message: `Abonnement renouvelé de ${days} jours`, school });
+  } catch (error) { next(error); }
+};
+
+export const addDays = async (req, res, next) => {
+  try {
+    const { days } = req.body;
+    if (!days || days <= 0) return res.status(400).json({ message: 'Nombre de jours invalide' });
+    const school = await saService.addDays(req.params.id, days);
+    res.json({ message: `${days} jours ajoutés`, school });
+  } catch (error) { next(error); }
+};
+
+export const resetSchoolPassword = async (req, res, next) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 6 caractères' });
+    }
+    await saService.resetSchoolPassword(req.params.id, newPassword);
+    res.json({ message: 'Mot de passe réinitialisé avec succès' });
+  } catch (error) { next(error); }
+};
+
+export const deleteSchool = async (req, res, next) => {
+  try {
+    await saService.deleteSchool(req.params.id);
+    res.status(200).json({ message: 'École supprimée définitivement' });
+  } catch (error) { next(error); }
+};
