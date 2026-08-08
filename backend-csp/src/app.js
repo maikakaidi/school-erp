@@ -37,8 +37,12 @@ import notificationsRoutes from './modules/notifications/notifications.routes.js
 const app = express();
 
 // Security
+const cspDirectives = helmet.contentSecurityPolicy.getDefaultDirectives();
+cspDirectives['img-src'] = ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com'];
+cspDirectives['connect-src'] = ["'self'", 'https://res.cloudinary.com'];
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: { directives: cspDirectives },
 }));
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000')
   .split(',')
