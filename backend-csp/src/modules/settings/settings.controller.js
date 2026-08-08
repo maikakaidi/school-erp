@@ -1,4 +1,5 @@
 import * as settingsService from './settings.service.js';
+import { useCloudinary } from '../../middlewares/upload.middleware.js';
 
 export const getSettings = async (req, res, next) => {
   try {
@@ -21,7 +22,7 @@ export const updateSettings = async (req, res, next) => {
 export const uploadLogo = async (req, res, next) => {
   try {
     if (!req.file) throw new Error('Aucun fichier téléchargé');
-    const logoUrl = `/uploads/${req.file.filename}`;
+    const logoUrl = useCloudinary ? req.file.path : `/uploads/${req.file.filename}`;
     const updated = await settingsService.updateSettings(req.user.schoolId, { logoUrl });
     res.json({ logoUrl });
   } catch (error) {
