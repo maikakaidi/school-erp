@@ -1,5 +1,5 @@
-const STATIC_CACHE = 'api-school-static-v2';
-const API_CACHE = 'api-school-api-v1';
+const STATIC_CACHE = 'api-school-static-v3';
+const API_CACHE = 'api-school-api-v2';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
