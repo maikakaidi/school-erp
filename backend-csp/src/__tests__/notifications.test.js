@@ -40,6 +40,7 @@ describe('Notifications', () => {
   it('should fetch notifications for a school', async () => {
     const results = await prisma.notification.findMany({
       where: { schoolId },
+      orderBy: { createdAt: 'desc' },
     });
     assert.ok(results.length >= 1);
     assert.strictEqual(results[0].title, 'Paiement reçu');

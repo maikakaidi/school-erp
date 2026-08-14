@@ -6,6 +6,28 @@ export const authenticate = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ message: 'Non authentifié' });
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Acteur métier (parent, enseignant, élève...) — toujours scoped par école
+    if (decoded.actorType) {
+      const school = await prisma.school.findUnique({ where: { id: decoded.schoolId } });
+      if (!school || !school.isActive) return res.status(401).json({ message: 'École inactive' });
+      if (decoded.actorType === 'parent') {
+        const parent = await prisma.parent.findFirst({
+          where: { id: decoded.actorId, schoolId: decoded.schoolId },
+        });
+        if (!parent || !parent.isActive) return res.status(401).json({ message: 'Compte parent invalide' });
+        req.user = {
+          schoolId: school.id,
+          actorType: 'parent',
+          actorId: parent.id,
+          parentId: parent.id,
+          role: 'parent',
+        };
+        return next();
+      }
+      return res.status(401).json({ message: 'Acteur non reconnu' });
+    }
+
     // Vérifier école (si user est une école)
     if (decoded.schoolId) {
       const school = await prisma.school.findUnique({ where: { id: decoded.schoolId } });

@@ -5,6 +5,15 @@ const AuthContext = createContext();
 function decodeToken(token) {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.actorType) {
+      return {
+        schoolId: payload.schoolId || null,
+        actorType: payload.actorType,
+        actorId: payload.actorId || null,
+        role: payload.role || payload.actorType,
+        exp: payload.exp,
+      };
+    }
     return {
       schoolId: payload.schoolId || null,
       superAdminId: payload.superAdminId || null,

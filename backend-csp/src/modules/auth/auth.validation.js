@@ -12,3 +12,8 @@ export const loginSuperAdminSchema = z.object({
   phone: z.string(),
   password: z.string(),
 });
+export const loginParentSchema = z.object({
+  schoolPhone: z.string().min(8),
+  phone: z.string().min(6),
+  password: z.string(),
+});

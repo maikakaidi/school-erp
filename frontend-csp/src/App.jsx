@@ -1,11 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ParentProvider } from './context/ParentContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { useTranslation } from 'react-i18next';
 import Sidebar from './components/Sidebar';
 import OfflineBanner from './components/OfflineBanner';
 import Dashboard from './pages/Dashboard';
 import Eleves from './pages/Eleves';
+import Parents from './pages/Parents';
+import Absences from './pages/Absences';
+import Annonces from './pages/Annonces';
 import ComingSoon from './pages/ComingSoon';
 import Architecture from './pages/Architecture';
 import Login from './pages/auth/Login';
@@ -25,6 +29,14 @@ import Salaires from './pages/Salaires';
 import Depenses from './pages/Depenses';
 import Statistiques from './pages/Statistiques';
 import SuperAdminDashboard from './pages/super-admin/Dashboard';
+import ParentLayout from './components/ParentLayout';
+import ParentDashboard from './pages/parent/ParentDashboard';
+import ParentNotes from './pages/parent/ParentNotes';
+import ParentPaiements from './pages/parent/ParentPaiements';
+import ParentAbsences from './pages/parent/ParentAbsences';
+import ParentAnnonces from './pages/parent/ParentAnnonces';
+import ParentNotifications from './pages/parent/ParentNotifications';
+import ParentProfil from './pages/parent/ParentProfil';
 
 
 
@@ -53,10 +65,32 @@ function AppRoutes() {
     return <Navigate to="/login" replace />;
   }
 
+  if (user.actorType === 'parent') {
+    return (
+      <ParentProvider>
+        <ParentLayout>
+          <Routes>
+            <Route path="/parent" element={<ParentDashboard />} />
+            <Route path="/parent/notes" element={<ParentNotes />} />
+            <Route path="/parent/absences" element={<ParentAbsences />} />
+            <Route path="/parent/annonces" element={<ParentAnnonces />} />
+            <Route path="/parent/notifications" element={<ParentNotifications />} />
+            <Route path="/parent/paiements" element={<ParentPaiements />} />
+            <Route path="/parent/profil" element={<ParentProfil />} />
+            <Route path="*" element={<Navigate to="/parent" replace />} />
+          </Routes>
+        </ParentLayout>
+      </ParentProvider>
+    );
+  }
+
   return (
     <Routes>
   <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
   <Route path="/eleves" element={<ProtectedLayout><Eleves /></ProtectedLayout>} />
+  <Route path="/parents" element={<ProtectedLayout><Parents /></ProtectedLayout>} />
+  <Route path="/absences" element={<ProtectedLayout><Absences /></ProtectedLayout>} />
+  <Route path="/annonces" element={<ProtectedLayout><Annonces /></ProtectedLayout>} />
   <Route path="/inscriptions" element={<ProtectedLayout><Inscriptions /></ProtectedLayout>} />
       <Route path="/notes" element={<ProtectedLayout><Notes /></ProtectedLayout>} />
       <Route path="/bulletins" element={<ProtectedLayout><Bulletins /></ProtectedLayout>} />

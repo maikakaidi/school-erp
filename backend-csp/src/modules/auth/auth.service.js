@@ -45,3 +45,40 @@ export const loginSuperAdmin = async (phone, password) => {
   const refreshToken = jwt.sign({ superAdminId: admin.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
   return { accessToken, refreshToken };
 };
+
+export const loginParent = async (schoolPhone, phone, password) => {
+  const school = await prisma.school.findUnique({ where: { phone: schoolPhone } });
+  if (!school) throw new Error('Établissement introuvable');
+  if (!school.isActive) throw new Error('Établissement désactivé');
+
+  const parent = await prisma.parent.findFirst({
+    where: { schoolId: school.id, telephone: phone },
+  });
+  if (!parent) throw new Error('Identifiants invalides');
+  if (!parent.isActive) throw new Error('Compte parent désactivé');
+  const valid = await bcrypt.compare(password, parent.password);
+  if (!valid) throw new Error('Identifiants invalides');
+
+  const accessToken = jwt.sign(
+    { schoolId: school.id, actorType: 'parent', actorId: parent.id, role: 'parent' },
+    process.env.JWT_SECRET,
+    { expiresIn: '8h' }
+  );
+  const refreshToken = jwt.sign(
+    { schoolId: school.id, actorType: 'parent', actorId: parent.id, role: 'parent' },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
+  return {
+    accessToken,
+    refreshToken,
+    parent: {
+      id: parent.id,
+      nom: parent.nom,
+      telephone: parent.telephone,
+      email: parent.email,
+      adresse: parent.adresse,
+    },
+    school: { id: school.id, name: school.name },
+  };
+};

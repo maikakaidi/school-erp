@@ -33,6 +33,10 @@ import coefficientsRoutes from './modules/coefficients/coefficients.routes.js';
 import horairesRoutes from './modules/horaires/horaires.routes.js';
 import salairesRoutes from './modules/salaires/salaires.routes.js';
 import notificationsRoutes from './modules/notifications/notifications.routes.js';
+import parentsRoutes from './modules/parents/parents.routes.js';
+import parentRoutes from './modules/parent/parent.routes.js';
+import absencesRoutes from './modules/absences/absences.routes.js';
+import annoncesRoutes from './modules/annonces/annonces.routes.js';
 
 const app = express();
 
@@ -48,15 +52,27 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http:
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
-app.use(cors({
-  origin(origin, cb) {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-    const err = new Error('Origine non autorisée');
-    err.status = 403;
-    return cb(err);
-  },
-  credentials: true,
-}));
+// CORS : autorise la liste blanche + toute requête same-origin
+// (le navigateur envoie un header Origin sur les sous-ressources `crossorigin`
+// servies par ce même serveur : scripts modules, feuilles de style)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && !allowedOrigins.includes(origin)) {
+    try {
+      const sameOrigin = `${req.protocol}://${req.get('host')}`;
+      if (origin !== sameOrigin) {
+        const err = new Error('Origine non autorisée');
+        err.status = 403;
+        return next(err);
+      }
+    } catch {
+      const err = new Error('Origine non autorisée');
+      err.status = 403;
+      return next(err);
+    }
+  }
+  return cors({ origin: true, credentials: true })(req, res, next);
+});
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('src/uploads'));
@@ -103,6 +119,10 @@ app.use('/api/coefficients', coefficientsRoutes);
 app.use('/api/horaires', horairesRoutes);
 app.use('/api/salaires', salairesRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/parents', parentsRoutes);
+app.use('/api/parent', parentRoutes);
+app.use('/api/absences', absencesRoutes);
+app.use('/api/annonces', annoncesRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.status(200).json({ status: 'OK' }));

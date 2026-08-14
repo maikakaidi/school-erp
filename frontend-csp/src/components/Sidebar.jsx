@@ -5,7 +5,7 @@ import {
   Home, Users, UserCheck, BookOpen, FileText,
   Award, DollarSign, CreditCard, Briefcase,
   BarChart2, Settings, Shield, LogOut, ChevronRight, Clock,
-  Calculator, Table, TrendingUp, Building2, Globe
+  Calculator, Table, TrendingUp, Building2, Globe, UserCheck2, CalendarX, Megaphone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchWithAuth } from '../api/fetchWithAuth';
@@ -21,10 +21,13 @@ const NAV_SCHOOL = [
   ]},
   { section: 'SCOLARITÉ', items: [
     { key: 'eleves',       label: 'Élèves',          icon: Users, path: '/eleves' },
+    { key: 'parents',      label: 'Parents',         icon: UserCheck2, path: '/parents' },
     { key: 'inscriptions', label: 'Inscriptions',    icon: UserCheck, path: '/inscriptions' },
     { key: 'matieres',     label: 'Matières',        icon: BookOpen, path: '/matieres' },
     { key: 'coefficients', label: 'Coefficients',    icon: Calculator, path: '/coefficients' },
     { key: 'notes',        label: 'Notes & Devoirs', icon: Table, path: '/notes' },
+    { key: 'absences',     label: 'Absences',        icon: CalendarX, path: '/absences' },
+    { key: 'annonces',     label: 'Annonces',        icon: Megaphone, path: '/annonces' },
     { key: 'bulletins',    label: 'Bulletins',       icon: FileText, path: '/bulletins' },
   ]},
   { section: 'EXAMENS', items: [

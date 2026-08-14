@@ -54,6 +54,9 @@ model School {
   horaires      HoraireEnseignant[]
   avances       AvanceSalaire[]
   notifications Notification[]
+  parents       Parent[]
+  absences      Absence[]
+  annonces      Annonce[]
 
   @@map("schools")
 }
@@ -96,6 +99,8 @@ model Eleve {
   notes           Note[]
   examResults     ExamenResultat[]
   versements      Versement[]
+  parents         ParentEleve[]
+  absences        Absence[]
   @@unique([schoolId, matricule])
   @@map("eleves")
 }
@@ -139,6 +144,8 @@ model Classe {
   examens      ExamenBlanc[]
   frais        FraisScolaire[]
   horaires     HoraireEnseignant[]
+  absences     Absence[]
+  annonces     Annonce[]
   @@map("classes")
 }
 
@@ -154,6 +161,7 @@ model Matiere {
   notes      Note[]
   examResults ExamenResultat[]
   horaires    HoraireEnseignant[]
+  absences    Absence[]
   @@map("matieres")
 }
 
@@ -385,17 +393,109 @@ model HoraireEnseignant {
   @@map("horaires_enseignants")
 }
 
-// ==================== NOTIFICATIONS ====================
-model Notification {
+// ==================== PARENTS ====================
+model Parent {
   id        String   @id @default(uuid())
   schoolId  String
-  type      String   // versement, eleve, bulletin, systeme, abonnement
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  link      String?
+  nom       String
+  telephone String
+  password  String
+  email     String?
+  adresse   String?
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  eleves    ParentEleve[]
+  @@unique([schoolId, telephone])
+  @@index([schoolId])
+  @@map("parents")
+}
+
+// ==================== LIEN PARENT ↔ ÉLÈVE ====================
+model ParentEleve {
+  id       String  @id @default(uuid())
+  schoolId String
+  parentId String
+  eleveId  String
+  parent   Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  eleve    Eleve   @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  @@unique([parentId, eleveId])
+  @@index([eleveId])
+  @@map("parent_eleves")
+}
+
+// ==================== ABSENCES & RETARDS ====================
+model Absence {
+  id                 String    @id @default(uuid())
+  schoolId           String
+  eleveId            String
+  classeId           String
+  matiereId          String?
+  date               DateTime
+  type               String    // absence | retard
+  motif              String?
+  justifie           Boolean   @default(false)
+  statutJustificatif String    @default("non_justifie") // non_justifie | en_attente | justifie
+  enregistrePar      String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  school             School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  eleve              Eleve     @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  classe             Classe    @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  matiere            Matiere?  @relation(fields: [matiereId], references: [id], onDelete: SetNull)
+  @@index([schoolId, date])
+  @@index([eleveId, date])
+  @@index([classeId, date])
+  @@map("absences")
+}
+
+// ==================== ANNONCES ====================
+model Annonce {
+  id        String   @id @default(uuid())
+  schoolId  String
+  titre     String
+  message   String
+  type      String   @default("info") // info | urgence | evenement | resultat
+  cible     String   @default("ecole") // ecole (tous) | parents (tous les parents) | classe (parents de la classe)
+  classeId  String?
+  date      DateTime @default(now())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classe    Classe?  @relation(fields: [classeId], references: [id], onDelete: SetNull)
+  reads     AnnonceRead[]
+  @@index([schoolId])
+  @@map("annonces")
+}
+
+// ==================== LECTURE ANNONCES ====================
+model AnnonceRead {
+  id         String   @id @default(uuid())
+  annonceId  String
+  readerType String   // parent | eleve | enseignant
+  readerId   String
+  readAt     DateTime @default(now())
+  annonce    Annonce  @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+  @@unique([annonceId, readerType, readerId])
+  @@map("annonce_reads")
+}
+
+// ==================== NOTIFICATIONS ====================
+model Notification {
+  id            String   @id @default(uuid())
+  schoolId      String
+  type          String   // versement, eleve, bulletin, systeme, abonnement, absence, annonce
+  title         String
+  message       String
+  isRead        Boolean  @default(false)
+  link          String?
+  recipientType String?  // null = interne école ; parent | enseignant | eleve | ecole (broadcast)
+  recipientId   String?
+  createdAt     DateTime @default(now())
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   @@index([schoolId, isRead])
+  @@index([recipientType, recipientId])
   @@map("notifications")
 }
