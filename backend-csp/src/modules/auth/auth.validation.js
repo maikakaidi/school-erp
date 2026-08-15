@@ -17,3 +17,13 @@ export const loginParentSchema = z.object({
   phone: z.string().min(6),
   password: z.string(),
 });
+export const loginEnseignantSchema = z.object({
+  schoolPhone: z.string().min(8),
+  phone: z.string().min(6),
+  password: z.string(),
+});
+export const loginEleveSchema = z.object({
+  schoolPhone: z.string().min(8),
+  matricule: z.string().min(1),
+  password: z.string(),
+});

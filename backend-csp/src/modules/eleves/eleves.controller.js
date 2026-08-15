@@ -14,6 +14,7 @@ const createEleveSchema = z.object({
   adresseParent: z.string(),
   telParent: z.string(),
   classeId: z.string().uuid().optional(),
+  password: z.string().min(4, 'Mot de passe minimum 4 caractères').optional(),
 });
 
 const updateEleveSchema = createEleveSchema.partial();

@@ -25,25 +25,29 @@ export const deleteExamen = async (id, schoolId) => {
   return await prisma.examenBlanc.deleteMany({ where: { id, schoolId } });
 };
 
-export const addSalle = async (examenId, data) => {
+export const addSalle = async (schoolId, examenId, data) => {
+  const examen = await prisma.examenBlanc.findFirst({ where: { id: examenId, schoolId }, select: { id: true } });
+  if (!examen) throw new Error('Examen non trouvé');
   return await prisma.examenSalle.create({ data: { examenId, ...data } });
 };
 
-export const addResultat = async (examenId, data) => {
+export const addResultat = async (schoolId, examenId, data) => {
+  const examen = await prisma.examenBlanc.findFirst({ where: { id: examenId, schoolId }, select: { id: true } });
+  if (!examen) throw new Error('Examen non trouvé');
   return await prisma.examenResultat.create({ data: { examenId, ...data } });
 };
 
-export const getResultats = async (examenId) => {
+export const getResultats = async (schoolId, examenId) => {
   return await prisma.examenResultat.findMany({
-    where: { examenId },
+    where: { examenId, examen: { is: { schoolId } } },
     include: { eleve: true, matiere: true },
     orderBy: { note: 'desc' },
   });
 };
 
-export const repartitionSalles = async (examenId) => {
-  const examenData = await prisma.examenBlanc.findUnique({
-    where: { id: examenId },
+export const repartitionSalles = async (schoolId, examenId) => {
+  const examenData = await prisma.examenBlanc.findFirst({
+    where: { id: examenId, schoolId },
     include: {
       classe: {
         include: {
@@ -77,9 +81,9 @@ export const repartitionSalles = async (examenId) => {
   return repartition;
 };
 
-export const getClassement = async (examenId) => {
+export const getClassement = async (schoolId, examenId) => {
   const results = await prisma.examenResultat.findMany({
-    where: { examenId },
+    where: { examenId, examen: { is: { schoolId } } },
     include: { eleve: true },
   });
   const notesParEleve = new Map();
@@ -105,11 +109,11 @@ export const getClassement = async (examenId) => {
   return classement;
 };
 
-export const generateClassementPDF = async (examenId, schoolName) => {
-  const classement = await getClassement(examenId);
-  const examen = await prisma.examenBlanc.findUnique({
-    where: { id: examenId },
-    include: { classe: true },
+export const generateClassementPDF = async (schoolId, examenId) => {
+  const classement = await getClassement(schoolId, examenId);
+  const examen = await prisma.examenBlanc.findFirst({
+    where: { id: examenId, schoolId },
+    include: { classe: true, school: true },
   });
   if (!examen) throw new Error('Examen non trouvé');
 
@@ -118,7 +122,7 @@ export const generateClassementPDF = async (examenId, schoolName) => {
   doc.pipe(stream);
 
   doc.fontSize(18).text(`Classement - ${examen.nom}`, { align: 'center' });
-  doc.fontSize(12).text(`Établissement : ${schoolName}`, { align: 'center' });
+  doc.fontSize(12).text(`Établissement : ${examen.school?.name || ''}`, { align: 'center' });
   doc.text(`Classe : ${examen.classe?.nom}`, { align: 'center' });
   doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, { align: 'center' });
   doc.moveDown();

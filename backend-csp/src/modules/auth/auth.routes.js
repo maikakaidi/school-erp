@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerSchool, loginSchool, loginSuperAdmin, loginParent, refreshToken } from './auth.controller.js';
+import { registerSchool, loginSchool, loginSuperAdmin, loginParent, loginEnseignant, loginEleve, refreshToken } from './auth.controller.js';
 const router = express.Router();
 
 /**
@@ -30,6 +30,20 @@ router.post('/login-super-admin', loginSuperAdmin);
  *     summary: Connexion parent (téléphone école + téléphone parent + mot de passe)
  */
 router.post('/login-parent', loginParent);
+/**
+ * @swagger
+ * /auth/login-enseignant:
+ *   post:
+ *     summary: Connexion enseignant (téléphone école + téléphone enseignant + mot de passe)
+ */
+router.post('/login-enseignant', loginEnseignant);
+/**
+ * @swagger
+ * /auth/login-eleve:
+ *   post:
+ *     summary: Connexion élève (téléphone école + matricule + mot de passe)
+ */
+router.post('/login-eleve', loginEleve);
 router.post('/refresh', refreshToken);
 
 export default router;

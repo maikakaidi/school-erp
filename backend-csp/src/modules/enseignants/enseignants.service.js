@@ -1,4 +1,5 @@
 import prisma from '../../config/database.js';
+import bcrypt from 'bcrypt';
 
 export const getAllEnseignants = async (schoolId, page = 1, limit = 20, search = '') => {
   const where = { schoolId, isActive: true };
@@ -36,6 +37,10 @@ export const createEnseignant = async (schoolId, data) => {
     anciennete: anciennete !== undefined && anciennete !== null ? parseInt(anciennete) : null,
     dateEmbauche: dateEmbauche ? new Date(dateEmbauche) : null,
   };
+
+  if (data.password) {
+    enseignantData.password = await bcrypt.hash(data.password, 10);
+  }
   
   return await prisma.enseignant.create({ data: enseignantData });
 };
@@ -75,8 +80,10 @@ export const updateEnseignant = async (id, schoolId, data) => {
       updateData.salaireFixe = data.salaireFixe !== null ? parseFloat(data.salaireFixe) : null;
     }
   }
-  
- 
+
+  if (data.password) {
+    updateData.password = await bcrypt.hash(data.password, 10);
+  }
   
   return await prisma.enseignant.updateMany({
     where: { id, schoolId },

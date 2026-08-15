@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ParentProvider } from './context/ParentContext';
+import { EnseignantProvider } from './context/EnseignantContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { useTranslation } from 'react-i18next';
 import Sidebar from './components/Sidebar';
@@ -25,6 +26,7 @@ import Examens from './pages/Examens';
 import Settings from './pages/Settings';
 import Enseignants from './pages/Enseignants';
 import Horaires from './pages/Horaires';
+import EmploiDuTemps from './pages/EmploiDuTemps';
 import Salaires from './pages/Salaires';
 import Depenses from './pages/Depenses';
 import Statistiques from './pages/Statistiques';
@@ -34,9 +36,29 @@ import ParentDashboard from './pages/parent/ParentDashboard';
 import ParentNotes from './pages/parent/ParentNotes';
 import ParentPaiements from './pages/parent/ParentPaiements';
 import ParentAbsences from './pages/parent/ParentAbsences';
+import ParentEmploiDuTemps from './pages/parent/ParentEmploiDuTemps';
 import ParentAnnonces from './pages/parent/ParentAnnonces';
 import ParentNotifications from './pages/parent/ParentNotifications';
 import ParentProfil from './pages/parent/ParentProfil';
+import EnseignantLayout from './components/EnseignantLayout';
+import EnseignantDashboard from './pages/enseignant/EnseignantDashboard';
+import EnseignantNotes from './pages/enseignant/EnseignantNotes';
+import EnseignantAbsences from './pages/enseignant/EnseignantAbsences';
+import EnseignantEmploiDuTemps from './pages/enseignant/EnseignantEmploiDuTemps';
+import EnseignantAnnonces from './pages/enseignant/EnseignantAnnonces';
+import EnseignantNotifications from './pages/enseignant/EnseignantNotifications';
+import EnseignantProfil from './pages/enseignant/EnseignantProfil';
+import Affectations from './pages/Affectations';
+import EleveLayout from './components/EleveLayout';
+import EleveDashboard from './pages/eleve/EleveDashboard';
+import EleveNotes from './pages/eleve/EleveNotes';
+import EleveEmploiDuTemps from './pages/eleve/EleveEmploiDuTemps';
+import EleveAbsences from './pages/eleve/EleveAbsences';
+import ElevePaiements from './pages/eleve/ElevePaiements';
+import EleveProfil from './pages/eleve/EleveProfil';
+import Messages from './pages/Messages';
+import MessagesInbox from './pages/MessagesInbox';
+import Rapports from './pages/Rapports';
 
 
 
@@ -73,14 +95,62 @@ function AppRoutes() {
             <Route path="/parent" element={<ParentDashboard />} />
             <Route path="/parent/notes" element={<ParentNotes />} />
             <Route path="/parent/absences" element={<ParentAbsences />} />
+            <Route path="/parent/emploi-du-temps" element={<ParentEmploiDuTemps />} />
             <Route path="/parent/annonces" element={<ParentAnnonces />} />
             <Route path="/parent/notifications" element={<ParentNotifications />} />
             <Route path="/parent/paiements" element={<ParentPaiements />} />
+            <Route path="/parent/messages" element={<MessagesInbox />} />
             <Route path="/parent/profil" element={<ParentProfil />} />
             <Route path="*" element={<Navigate to="/parent" replace />} />
           </Routes>
         </ParentLayout>
       </ParentProvider>
+    );
+  }
+
+  if (user.actorType === 'enseignant') {
+    return (
+      <EnseignantProvider>
+        <EnseignantLayout>
+          <Routes>
+            <Route path="/enseignant" element={<EnseignantDashboard />} />
+            <Route path="/enseignant/notes" element={<EnseignantNotes />} />
+            <Route path="/enseignant/absences" element={<EnseignantAbsences />} />
+            <Route path="/enseignant/emploi-du-temps" element={<EnseignantEmploiDuTemps />} />
+            <Route path="/enseignant/annonces" element={<EnseignantAnnonces />} />
+            <Route path="/enseignant/notifications" element={<EnseignantNotifications />} />
+            <Route path="/enseignant/profil" element={<EnseignantProfil />} />
+            <Route path="/enseignant/messages" element={<MessagesInbox />} />
+            <Route path="*" element={<Navigate to="/enseignant" replace />} />
+          </Routes>
+        </EnseignantLayout>
+      </EnseignantProvider>
+    );
+  }
+
+  if (user.actorType === 'eleve') {
+    return (
+      <EleveLayout>
+        <Routes>
+          <Route path="/eleve" element={<EleveDashboard />} />
+          <Route path="/eleve/notes" element={<EleveNotes />} />
+          <Route path="/eleve/emploi-du-temps" element={<EleveEmploiDuTemps />} />
+          <Route path="/eleve/absences" element={<EleveAbsences />} />
+          <Route path="/eleve/paiements" element={<ElevePaiements />} />
+          <Route path="/eleve/profil" element={<EleveProfil />} />
+          <Route path="/eleve/messages" element={<MessagesInbox />} />
+          <Route path="*" element={<Navigate to="/eleve" replace />} />
+        </Routes>
+      </EleveLayout>
+    );
+  }
+
+  if (user.role === 'super_admin') {
+    return (
+      <Routes>
+        <Route path="/super-admin" element={<ProtectedLayout><SuperAdminDashboard /></ProtectedLayout>} />
+        <Route path="*" element={<Navigate to="/super-admin" replace />} />
+      </Routes>
     );
   }
 
@@ -103,10 +173,13 @@ function AppRoutes() {
       <Route path="/coefficients" element={<ProtectedLayout><Coefficients /></ProtectedLayout>} />
       <Route path="/parametres" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
       <Route path="/enseignants" element={<ProtectedLayout><Enseignants /></ProtectedLayout>} />
+      <Route path="/affectations" element={<ProtectedLayout><Affectations /></ProtectedLayout>} />
       <Route path="/horaires" element={<ProtectedLayout><Horaires /></ProtectedLayout>} />
+      <Route path="/emploi-du-temps" element={<ProtectedLayout><EmploiDuTemps /></ProtectedLayout>} />
       <Route path="/salaires" element={<ProtectedLayout><Salaires /></ProtectedLayout>} />
       <Route path="/architecture" element={<ProtectedLayout><Architecture /></ProtectedLayout>} />
-      <Route path="/super-admin" element={<ProtectedLayout><SuperAdminDashboard /></ProtectedLayout>} />
+      <Route path="/messages" element={<ProtectedLayout><Messages /></ProtectedLayout>} />
+      <Route path="/rapports" element={<ProtectedLayout><Rapports /></ProtectedLayout>} />
       <Route path="/users" element={<ProtectedLayout><ComingSoon page="users" /></ProtectedLayout>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

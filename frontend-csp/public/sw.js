@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'api-school-static-v3';
+const STATIC_CACHE = 'api-school-static-v4';
 const API_CACHE = 'api-school-api-v2';
 
 self.addEventListener('install', (event) => {

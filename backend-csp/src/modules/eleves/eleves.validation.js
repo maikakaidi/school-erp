@@ -12,6 +12,7 @@ export const createEleveSchema = z.object({
   adresseParent: z.string(),
   telParent: z.string(),
   photoUrl: z.string().url().optional(),
+  password: z.string().min(4, 'Mot de passe minimum 4 caractères').optional(),
 });
 
 export const updateEleveSchema = createEleveSchema.partial();

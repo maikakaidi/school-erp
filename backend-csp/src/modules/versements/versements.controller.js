@@ -1,6 +1,7 @@
 import * as versementService from './versements.service.js';
 import { createVersementSchema } from './versements.validation.js';
 import { sendExcel } from '../../utils/excel.export.js';
+import prisma from '../../config/database.js';
 
 export const create = async (req, res, next) => {
   try {
@@ -38,5 +39,28 @@ export const exportExcel = async (req, res, next) => {
     const { anneeScolaire } = req.query;
     const rows = await versementService.exportVersements(req.user.schoolId, anneeScolaire);
     sendExcel(res, rows, 'versements.xlsx');
+  } catch (error) { next(error); }
+};
+
+// Reçu PDF — accessible à l'école et au parent (uniquement pour ses enfants)
+export const downloadRecu = async (req, res, next) => {
+  try {
+    const { recuNumber } = req.params;
+    const versement = await versementService.getVersementByRecuNumber(req.user.schoolId, recuNumber);
+    if (!versement) return res.status(404).json({ message: 'Reçu introuvable' });
+
+    if (req.user.role === 'parent') {
+      const lien = await prisma.parentEleve.findFirst({
+        where: { parentId: req.user.parentId, eleveId: versement.eleveId },
+      });
+      if (!lien) return res.status(403).json({ message: 'Accès refusé' });
+    } else if (req.user.role !== 'school') {
+      return res.status(403).json({ message: 'Accès refusé' });
+    }
+
+    const stream = await versementService.generateReçuPDF(req.user.schoolId, recuNumber);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="recu_${recuNumber}.pdf"`);
+    stream.pipe(res);
   } catch (error) { next(error); }
 };

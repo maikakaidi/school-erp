@@ -102,11 +102,12 @@ export const getSalaires = async (schoolId, mois, annee) => {
 
 // Marquer payé et générer reçu
 export const marquerPaye = async (id, schoolId) => {
-  const salaire = await prisma.salary.update({
+  const salaire = await prisma.salary.findFirst({ where: { id, schoolId } });
+  if (!salaire) throw new Error('Salaire non trouvé');
+  return await prisma.salary.update({
     where: { id },
     data: { isPaid: true, paidAt: new Date() },
   });
-  return salaire;
 };
 
 // Avances

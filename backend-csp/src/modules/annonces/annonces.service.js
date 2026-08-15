@@ -47,12 +47,21 @@ const getTargetParentIds = async (schoolId, cible, classeId) => {
     });
     return [...new Set(links.map((l) => l.parentId))];
   }
-  // ecole | parents → tous les parents de l'école
+  // ecole | parents | enseignants → tous les parents de l'école
   const parents = await prisma.parent.findMany({
     where: { schoolId, isActive: true },
     select: { id: true },
   });
   return parents.map((p) => p.id);
+};
+
+const getTargetEnseignantIds = async (schoolId, cible) => {
+  if (cible !== 'ecole' && cible !== 'enseignants') return [];
+  const enseignants = await prisma.enseignant.findMany({
+    where: { schoolId, isActive: true },
+    select: { id: true },
+  });
+  return enseignants.map((e) => e.id);
 };
 
 export const createAnnonce = async (schoolId, data) => {
@@ -87,6 +96,17 @@ export const createAnnonce = async (schoolId, data) => {
         link: '/parent/annonces',
         recipientType: 'parent',
         recipientId: parentId,
+      })));
+    }
+    const enseignantIds = await getTargetEnseignantIds(schoolId, cible);
+    if (enseignantIds.length) {
+      await createNotificationsMany(schoolId, enseignantIds.map((enseignantId) => ({
+        type: 'annonce',
+        title: annonce.titre,
+        message: annonce.message,
+        link: '/enseignant/annonces',
+        recipientType: 'enseignant',
+        recipientId: enseignantId,
       })));
     }
   } catch (e) {
@@ -191,6 +211,67 @@ export const markAnnonceReadForParent = async (schoolId, parentId, annonceId) =>
   return await prisma.annonceRead.upsert({
     where: { annonceId_readerType_readerId: { annonceId, readerType: 'parent', readerId: parentId } },
     create: { annonceId, readerType: 'parent', readerId: parentId },
+    update: {},
+  });
+};
+
+const buildEnseignantWhere = async (schoolId, enseignantId) => {
+  const affectations = await prisma.affectation.findMany({
+    where: { schoolId, enseignantId, isActive: true },
+    select: { classeId: true },
+  });
+  const classeIds = [...new Set(affectations.map((a) => a.classeId))];
+  return {
+    schoolId,
+    isActive: true,
+    OR: [
+      { cible: 'ecole' },
+      { cible: 'enseignants' },
+      ...(classeIds.length ? classeIds.map((classeId) => ({ cible: 'classe', classeId })) : []),
+    ],
+  };
+};
+
+export const getAnnoncesForEnseignant = async (schoolId, enseignantId, { unreadOnly, limit } = {}) => {
+  const where = await buildEnseignantWhere(schoolId, enseignantId);
+  if (unreadOnly) where.reads = { none: { readerType: 'enseignant', readerId: enseignantId } };
+
+  const annonces = await prisma.annonce.findMany({
+    where,
+    include: {
+      classe: { select: { id: true, nom: true } },
+      reads: {
+        where: { readerType: 'enseignant', readerId: enseignantId },
+        select: { readAt: true },
+      },
+    },
+    orderBy: { date: 'desc' },
+    take: limit || 50,
+  });
+
+  return annonces.map(({ reads, ...a }) => ({
+    ...a,
+    isRead: reads.length > 0,
+    readAt: reads[0]?.readAt || null,
+  }));
+};
+
+export const getUnreadAnnoncesCountForEnseignant = async (schoolId, enseignantId) => {
+  const where = await buildEnseignantWhere(schoolId, enseignantId);
+  where.reads = { none: { readerType: 'enseignant', readerId: enseignantId } };
+  return await prisma.annonce.count({ where });
+};
+
+export const markAnnonceReadForEnseignant = async (schoolId, enseignantId, annonceId) => {
+  const annonce = await prisma.annonce.findFirst({ where: { id: annonceId, schoolId, isActive: true } });
+  if (!annonce) {
+    const error = new Error('Annonce non trouvée');
+    error.status = 404;
+    throw error;
+  }
+  return await prisma.annonceRead.upsert({
+    where: { annonceId_readerType_readerId: { annonceId, readerType: 'enseignant', readerId: enseignantId } },
+    create: { annonceId, readerType: 'enseignant', readerId: enseignantId },
     update: {},
   });
 };

@@ -37,6 +37,11 @@ import parentsRoutes from './modules/parents/parents.routes.js';
 import parentRoutes from './modules/parent/parent.routes.js';
 import absencesRoutes from './modules/absences/absences.routes.js';
 import annoncesRoutes from './modules/annonces/annonces.routes.js';
+import affectationsRoutes from './modules/affectations/affectations.routes.js';
+import profRoutes from './modules/prof/prof.routes.js';
+import eleveRoutes from './modules/eleve/eleve.routes.js';
+import messagesRoutes from './modules/messages/messages.routes.js';
+import rapportsRoutes from './modules/rapports/rapports.routes.js';
 
 const app = express();
 
@@ -123,6 +128,11 @@ app.use('/api/parents', parentsRoutes);
 app.use('/api/parent', parentRoutes);
 app.use('/api/absences', absencesRoutes);
 app.use('/api/annonces', annoncesRoutes);
+app.use('/api/affectations', affectationsRoutes);
+app.use('/api/prof', profRoutes);
+app.use('/api/eleve', eleveRoutes);
+app.use('/api/messages', messagesRoutes);
+app.use('/api/rapports', rapportsRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.status(200).json({ status: 'OK' }));

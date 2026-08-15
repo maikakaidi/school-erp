@@ -9,6 +9,7 @@ import {
   getUnreadAnnoncesCountForParent,
   markAnnonceReadForParent,
 } from '../annonces/annonces.service.js';
+import { getHorairesByClasse } from '../horaires/horaires.service.js';
 
 const getLatestInscription = (inscriptions) => {
   if (!inscriptions || inscriptions.length === 0) return null;
@@ -81,7 +82,7 @@ export const getChildOwned = async (schoolId, parentId, eleveId) => {
   return link.eleve;
 };
 
-const computeNotesForChild = async (schoolId, eleveId, classeId, anneeScolaire) => {
+export const computeNotesForChild = async (schoolId, eleveId, classeId, anneeScolaire) => {
   const coeffs = await prisma.coefficient.findMany({ where: { schoolId, classeId, anneeScolaire } });
   const coeffMap = new Map(coeffs.map((c) => [c.matiereId, c.coefficient]));
 
@@ -201,6 +202,20 @@ export const getAbsences = async (schoolId, parentId, eleveId, anneeScolaire) =>
     justifies: absences.filter((a) => a.justifie).length,
     nonJustifies: absences.filter((a) => !a.justifie).length,
     absences,
+  };
+};
+
+export const getEmploiDuTemps = async (schoolId, parentId, eleveId, mois, annee) => {
+  const eleve = await getChildOwned(schoolId, parentId, eleveId);
+  const inscription = getLatestInscription(eleve.inscriptions);
+  if (!inscription || !inscription.classeId) {
+    return { eleveId, classe: null, horaires: [] };
+  }
+  const horaires = await getHorairesByClasse(schoolId, inscription.classeId, mois, annee);
+  return {
+    eleveId,
+    classe: { id: inscription.classeId, nom: inscription.classe?.nom || null },
+    horaires,
   };
 };
 

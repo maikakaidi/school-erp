@@ -17,6 +17,24 @@ export const getByEnseignant = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+export const getByClasse = async (req, res, next) => {
+  try {
+    const { classeId, mois, annee } = req.query;
+    if (!classeId) return res.status(400).json({ message: 'classeId requis' });
+    const horaires = await horaireService.getHorairesByClasse(req.user.schoolId, classeId, mois, annee);
+    res.json(horaires);
+  } catch (error) { next(error); }
+};
+
+export const getByEleve = async (req, res, next) => {
+  try {
+    const { eleveId, mois, annee } = req.query;
+    if (!eleveId) return res.status(400).json({ message: 'eleveId requis' });
+    const data = await horaireService.getEmploiDuTempsEleve(req.user.schoolId, eleveId, mois, annee);
+    res.json(data);
+  } catch (error) { next(error); }
+};
+
 export const create = async (req, res, next) => {
   try {
     const validated = createHoraireSchema.parse(req.body);

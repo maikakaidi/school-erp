@@ -15,7 +15,7 @@ const T = {
 
 export default function Login() {
   const { t } = useTranslation();
-  const [mode, setMode] = useState('school'); // school | parent
+  const [mode, setMode] = useState('school'); // school | parent | enseignant | eleve
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [phone, setPhone] = useState('');
   const [schoolPhone, setSchoolPhone] = useState('');
@@ -29,6 +29,8 @@ export default function Login() {
   // Redirige un utilisateur déjà connecté
   useEffect(() => {
     if (user?.role === 'parent') navigate('/parent', { replace: true });
+    else if (user?.role === 'enseignant') navigate('/enseignant', { replace: true });
+    else if (user?.role === 'eleve') navigate('/eleve', { replace: true });
     else if (user?.role === 'super_admin') navigate('/super-admin', { replace: true });
     else if (user?.role === 'school') navigate('/', { replace: true });
   }, [user, navigate]);
@@ -42,6 +44,12 @@ export default function Login() {
       if (mode === 'parent') {
         endpoint = '/api/auth/login-parent';
         body = { schoolPhone, phone, password };
+      } else if (mode === 'enseignant') {
+        endpoint = '/api/auth/login-enseignant';
+        body = { schoolPhone, phone, password };
+      } else if (mode === 'eleve') {
+        endpoint = '/api/auth/login-eleve';
+        body = { schoolPhone, matricule: phone, password };
       } else if (isSuperAdmin) {
         endpoint = '/api/auth/login-super-admin';
         body = { phone, password };
@@ -59,6 +67,8 @@ export default function Login() {
       const schoolData = data.school || (mode === 'parent' ? { name: data.school?.name } : null);
       login(data.accessToken, data.refreshToken, schoolData);
       if (mode === 'parent') navigate('/parent');
+      else if (mode === 'enseignant') navigate('/enseignant');
+      else if (mode === 'eleve') navigate('/eleve');
       else if (isSuperAdmin) navigate('/super-admin');
       else navigate('/');
     } catch (err) {
@@ -102,10 +112,12 @@ export default function Login() {
         <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
           {tab('school', 'École')}
           {tab('parent', 'Parent')}
+          {tab('enseignant', 'Enseignant')}
+          {tab('eleve', 'Élève')}
         </div>
 
         <form onSubmit={handleSubmit}>
-          {mode === 'parent' && (
+          {(mode === 'parent' || mode === 'enseignant' || mode === 'eleve') && (
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 13, color: T.muted }}>Téléphone de l'établissement</label>
               <input
@@ -119,7 +131,7 @@ export default function Login() {
           )}
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 13, color: T.muted }}>
-              {mode === 'parent' ? 'Téléphone du parent' : t('auth.phone')}
+              {mode === 'parent' ? 'Téléphone du parent' : mode === 'enseignant' ? "Téléphone de l'enseignant" : mode === 'eleve' ? "Matricule de l'élève" : t('auth.phone')}
             </label>
             <input
               type="tel"

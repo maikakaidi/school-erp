@@ -61,6 +61,15 @@ export const getAbsences = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+export const getEmploiDuTemps = async (req, res, next) => {
+  try {
+    const { childId, mois, annee } = req.query;
+    if (!childId) return res.status(400).json({ message: 'childId requis' });
+    const data = await parentService.getEmploiDuTemps(req.user.schoolId, req.user.parentId, childId, mois, annee);
+    res.json(data);
+  } catch (error) { next(error); }
+};
+
 const parseBool = (v) => v === 'true';
 
 export const getNotifications = async (req, res, next) => {

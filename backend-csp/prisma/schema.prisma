@@ -13,14 +13,15 @@ model SuperAdmin {
   phone     String   @unique
   password  String
   createdAt DateTime @default(now())
+
   @@map("super_admins")
 }
 
 // ==================== ÉCOLES ====================
 model School {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   name               String
-  phone              String   @unique
+  phone              String    @unique
   password           String
   logo               String?
   slogan             String?
@@ -29,13 +30,13 @@ model School {
   primaryColor       String?
   secondaryColor     String?
   signature          String?
-  subscriptionStatus String   @default("trial")
-  trialDays          Int      @default(14)
+  subscriptionStatus String    @default("trial")
+  trialDays          Int       @default(14)
   subscriptionStart  DateTime?
   subscriptionEnd    DateTime?
-  isActive           Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   // Relations
   eleves        Eleve[]
@@ -57,6 +58,8 @@ model School {
   parents       Parent[]
   absences      Absence[]
   annonces      Annonce[]
+  affectations  Affectation[]
+  messages      Message[]
 
   @@map("schools")
 }
@@ -71,226 +74,249 @@ model AcademicYear {
   endDate   DateTime
   createdAt DateTime @default(now())
   school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
   @@unique([schoolId, name])
   @@map("academic_years")
 }
 
 // ==================== ÉLÈVES ====================
 model Eleve {
-  id              String   @id @default(uuid())
-  schoolId        String
-  matricule       String   @unique
-  nom             String
-  prenom          String
-  sexe            String
-  dateNaissance   DateTime
-  lieuNaissance   String
-  nationalite     String
-  telephone       String?
-  photoUrl        String?
-  nomParent       String
-  adresseParent   String
-  telParent       String
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  inscriptions    Inscription[]
-  notes           Note[]
-  examResults     ExamenResultat[]
-  versements      Versement[]
-  parents         ParentEleve[]
-  absences        Absence[]
+  id            String           @id @default(uuid())
+  schoolId      String
+  matricule     String           @unique
+  nom           String
+  prenom        String
+  sexe          String
+  dateNaissance DateTime
+  lieuNaissance String
+  nationalite   String
+  telephone     String?
+  photoUrl      String?
+  nomParent     String
+  adresseParent String
+  telParent     String
+  password      String?
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  school        School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  inscriptions  Inscription[]
+  notes         Note[]
+  examResults   ExamenResultat[]
+  versements    Versement[]
+  parents       ParentEleve[]
+  absences      Absence[]
+
   @@unique([schoolId, matricule])
   @@map("eleves")
 }
 
 // ==================== ENSEIGNANTS (vacataires / permanents) ====================
 model Enseignant {
-  id           String   @id @default(uuid())
+  id           String              @id @default(uuid())
   schoolId     String
   nom          String
   prenom       String
   telephone    String
   email        String?
   specialite   String?
-  estVacataire Boolean  @default(true)   // true = payé à l'heure, false = salaire fixe
-  tauxHoraire  Float?                    // pour vacataires (FCFA/heure)
-  salaireFixe  Float?                    // pour permanents (FCFA/mois)
-  anciennete   Int?                      // années d'ancienneté (sera calculé ou saisi)
+  estVacataire Boolean             @default(true) // true = payé à l'heure, false = salaire fixe
+  tauxHoraire  Float? // pour vacataires (FCFA/heure)
+  salaireFixe  Float? // pour permanents (FCFA/mois)
+  anciennete   Int? // années d'ancienneté (sera calculé ou saisi)
   dateEmbauche DateTime?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  password     String? // mot de passe pour l'espace enseignant (bcrypt)
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   salaires     Salary[]
   horaires     HoraireEnseignant[]
   avances      AvanceSalaire[]
+  affectations Affectation[]
+
+  @@unique([schoolId, telephone])
+  @@index([schoolId])
   @@map("enseignants")
 }
 
 // ==================== CLASSES ====================
 model Classe {
-  id         String   @id @default(uuid())
-  schoolId   String
-  nom        String
-  niveau     String
-  capacite   Int?
+  id            String              @id @default(uuid())
+  schoolId      String
+  nom           String
+  niveau        String
+  capacite      Int?
   anneeScolaire String
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  inscriptions Inscription[]
-  coefficients Coefficient[]
-  examens      ExamenBlanc[]
-  frais        FraisScolaire[]
-  horaires     HoraireEnseignant[]
-  absences     Absence[]
-  annonces     Annonce[]
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  school        School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  inscriptions  Inscription[]
+  coefficients  Coefficient[]
+  examens       ExamenBlanc[]
+  frais         FraisScolaire[]
+  horaires      HoraireEnseignant[]
+  absences      Absence[]
+  annonces      Annonce[]
+  affectations  Affectation[]
+
   @@map("classes")
 }
 
 // ==================== MATIÈRES ====================
 model Matiere {
-  id         String   @id @default(uuid())
-  schoolId   String
-  libelle    String
-  code       String?
-  type       String?
-  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  id           String              @id @default(uuid())
+  schoolId     String
+  libelle      String
+  code         String?
+  type         String?
+  school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   coefficients Coefficient[]
-  notes      Note[]
-  examResults ExamenResultat[]
-  horaires    HoraireEnseignant[]
-  absences    Absence[]
+  notes        Note[]
+  examResults  ExamenResultat[]
+  horaires     HoraireEnseignant[]
+  absences     Absence[]
+  affectations Affectation[]
+
   @@map("matieres")
 }
 
 // ==================== COEFFICIENTS ====================
 model Coefficient {
-  id             String   @id @default(uuid())
-  schoolId       String
-  classeId       String
-  matiereId      String
-  coefficient    Int
-  anneeScolaire  String
-  classe         Classe   @relation(fields: [classeId], references: [id], onDelete: Cascade)
-  matiere        Matiere  @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+  id            String  @id @default(uuid())
+  schoolId      String
+  classeId      String
+  matiereId     String
+  coefficient   Int
+  anneeScolaire String
+  classe        Classe  @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  matiere       Matiere @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+
   @@unique([classeId, matiereId, anneeScolaire])
   @@map("coefficients")
 }
 
 // ==================== INSCRIPTIONS ====================
 model Inscription {
-  id             String   @id @default(uuid())
-  schoolId       String
-  eleveId        String
-  classeId       String
-  anneeScolaire  String
+  id              String   @id @default(uuid())
+  schoolId        String
+  eleveId         String
+  classeId        String
+  anneeScolaire   String
   dateInscription DateTime @default(now())
-  type           String
-  reduction      Float?
-  eleve          Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
-  classe         Classe   @relation(fields: [classeId], references: [id], onDelete: Cascade)
-  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  type            String
+  reduction       Float?
+  eleve           Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  classe          Classe   @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
   @@map("inscriptions")
 }
 
 // ==================== NOTES ====================
 model Note {
-  id             String    @id @default(uuid())
-  schoolId       String
-  eleveId        String
-  matiereId      String
-  classeId       String
-  semestre       Int
-  anneeScolaire  String
-  devoir1        Float?
-  devoir2        Float?
-  composition    Float?
-  moyenne        Float?
-  rang           Int?
-  appreciation   String?
-  eleve          Eleve     @relation(fields: [eleveId], references: [id], onDelete: Cascade)
-  matiere        Matiere   @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+  id            String  @id @default(uuid())
+  schoolId      String
+  eleveId       String
+  matiereId     String
+  classeId      String
+  semestre      Int
+  anneeScolaire String
+  devoir1       Float?
+  devoir2       Float?
+  composition   Float?
+  moyenne       Float?
+  rang          Int?
+  appreciation  String?
+  eleve         Eleve   @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  matiere       Matiere @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+
   @@unique([eleveId, matiereId, semestre, anneeScolaire])
   @@map("notes")
 }
 
 // ==================== VERSEMENTS ====================
 model Versement {
-  id             String    @id @default(uuid())
-  schoolId       String
-  eleveId        String
-  anneeScolaire  String
-  tranche        Int
-  montant        Float
-  reduction      Float?
-  montantPaye    Float
-  datePaiement   DateTime  @default(now())
-  modePaiement   String
-  recuNumber     String    @unique
-  commentaire    String?
-  eleve          Eleve     @relation(fields: [eleveId], references: [id], onDelete: Cascade)
-  school         School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  id            String   @id @default(uuid())
+  schoolId      String
+  eleveId       String
+  anneeScolaire String
+  tranche       Int
+  montant       Float
+  reduction     Float?
+  montantPaye   Float
+  datePaiement  DateTime @default(now())
+  modePaiement  String
+  recuNumber    String
+  commentaire   String?
+  eleve         Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, recuNumber])
+  @@index([schoolId])
   @@map("versements")
 }
 
 // ==================== DÉPENSES ====================
 model Depense {
-  id         String    @id @default(uuid())
-  schoolId   String
-  libelle    String
-  montant    Float
-  rubrique   String
+  id          String   @id @default(uuid())
+  schoolId    String
+  libelle     String
+  montant     Float
+  rubrique    String
   dateDepense DateTime @default(now())
   pieceJointe String?
-  school     School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
   @@map("depenses")
 }
 
 // ==================== EXAMENS BLANCS ====================
 model ExamenBlanc {
-  id             String    @id @default(uuid())
-  schoolId       String
-  nom            String
-  dateDebut      DateTime
-  dateFin        DateTime
-  classeId       String
-  anneeScolaire  String
-  school         School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  classe         Classe    @relation(fields: [classeId], references: [id], onDelete: Cascade)
-  salles         ExamenSalle[]
-  resultats      ExamenResultat[]
+  id            String           @id @default(uuid())
+  schoolId      String
+  nom           String
+  dateDebut     DateTime
+  dateFin       DateTime
+  classeId      String
+  anneeScolaire String
+  school        School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classe        Classe           @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  salles        ExamenSalle[]
+  resultats     ExamenResultat[]
+
   @@map("examens_blancs")
 }
 
 model ExamenSalle {
-  id         String   @id @default(uuid())
-  examenId   String
-  nomSalle   String
-  capacite   Int
-  examen     ExamenBlanc @relation(fields: [examenId], references: [id], onDelete: Cascade)
+  id       String      @id @default(uuid())
+  examenId String
+  nomSalle String
+  capacite Int
+  examen   ExamenBlanc @relation(fields: [examenId], references: [id], onDelete: Cascade)
+
   @@map("examens_salles")
 }
 
 model ExamenResultat {
-  id         String   @id @default(uuid())
-  examenId   String
-  eleveId    String
-  matiereId  String
-  note       Float
-  rang       Int?
-  examen     ExamenBlanc @relation(fields: [examenId], references: [id], onDelete: Cascade)
-  eleve      Eleve       @relation(fields: [eleveId], references: [id], onDelete: Cascade)
-  matiere    Matiere     @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+  id        String      @id @default(uuid())
+  examenId  String
+  eleveId   String
+  matiereId String
+  note      Float
+  rang      Int?
+  examen    ExamenBlanc @relation(fields: [examenId], references: [id], onDelete: Cascade)
+  eleve     Eleve       @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  matiere   Matiere     @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+
   @@map("examens_resultats")
 }
 
 // ==================== PARAMÈTRES ÉCOLE ====================
 model SchoolSetting {
-  id         String   @id @default(uuid())
-  schoolId   String   @unique
-  primaryColor   String?  @default("#3B82F6")
+  id             String  @id @default(uuid())
+  schoolId       String  @unique
+  primaryColor   String? @default("#3B82F6")
   secondaryColor String? @default("#10B981")
   logoUrl        String?
   slogan         String?
@@ -299,7 +325,8 @@ model SchoolSetting {
   email          String?
   phone          String?
   bulletinFormat String?
-  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school         School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
   @@map("school_settings")
 }
 
@@ -309,104 +336,128 @@ model SchoolUser {
   schoolId  String
   login     String
   password  String
-  role      String   // Administrateur, Comptabilité, Info_Bulletin
+  role      String // Administrateur, Comptabilité, Info_Bulletin
   isBlocked Boolean  @default(false)
   createdAt DateTime @default(now())
   school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
   @@unique([schoolId, login])
   @@map("school_users")
 }
 
 // ==================== FRAIS SCOLAIRES ====================
 model FraisScolaire {
-  id          String   @id @default(uuid())
-  schoolId    String
-  classeId    String
+  id            String @id @default(uuid())
+  schoolId      String
+  classeId      String
   anneeScolaire String
-  versement1  Float
-  versement2  Float
-  versement3  Float
-  total       Float
-  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  classe      Classe   @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  versement1    Float
+  versement2    Float
+  versement3    Float
+  total         Float
+  school        School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classe        Classe @relation(fields: [classeId], references: [id], onDelete: Cascade)
+
   @@unique([schoolId, classeId, anneeScolaire])
   @@map("frais_scolaires")
 }
 
 // ==================== AVANCES SUR SALAIRE ====================
 model AvanceSalaire {
-  id           String    @id @default(uuid())
+  id           String     @id @default(uuid())
   schoolId     String
   enseignantId String
   montant      Float
-  demandeDate  DateTime  @default(now())
+  demandeDate  DateTime   @default(now())
   accordDate   DateTime?
-  rembourse    Boolean   @default(false)
+  rembourse    Boolean    @default(false)
   remarque     String?
-  school       School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school       School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   enseignant   Enseignant @relation(fields: [enseignantId], references: [id], onDelete: Cascade)
-  salaires     Salary[]   // ← NOUVEAU
+  salaires     Salary[] // ← NOUVEAU
 
   @@map("avances_salaires")
 }
 
 // ==================== SALAIRES (avec type et référence à avance) ====================
 model Salary {
-  id             String    @id @default(uuid())
-  schoolId       String
-  enseignantId   String
-  mois           Int
-  annee          Int
-  type           String    @default("normale") // "normale" ou "avance"
-  avanceId       String?   // référence à AvanceSalaire si type="avance"
-  base           Float     // salaire de base (heures * taux pour vacataire, salaireFixe pour permanent)
+  id              String         @id @default(uuid())
+  schoolId        String
+  enseignantId    String
+  mois            Int
+  annee           Int
+  type            String         @default("normale") // "normale" ou "avance"
+  avanceId        String? // référence à AvanceSalaire si type="avance"
+  base            Float // salaire de base (heures * taux pour vacataire, salaireFixe pour permanent)
   primeAnciennete Float?
-  vacation       Float?    // heures supplémentaires (si applicable)
-  total          Float
-  isPaid         Boolean   @default(false)
-  paidAt         DateTime?
-  createdAt      DateTime  @default(now())
-  school         School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  enseignant     Enseignant @relation(fields: [enseignantId], references: [id], onDelete: Cascade)
-  avance         AvanceSalaire? @relation(fields: [avanceId], references: [id])
+  vacation        Float? // heures supplémentaires (si applicable)
+  total           Float
+  isPaid          Boolean        @default(false)
+  paidAt          DateTime?
+  createdAt       DateTime       @default(now())
+  school          School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  enseignant      Enseignant     @relation(fields: [enseignantId], references: [id], onDelete: Cascade)
+  avance          AvanceSalaire? @relation(fields: [avanceId], references: [id])
+
   @@unique([schoolId, enseignantId, mois, annee, type])
   @@map("salaires")
 }
 
 // ==================== HORAIRES ENSEIGNANTS (VACATIONS) ====================
 model HoraireEnseignant {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   schoolId     String
   enseignantId String
   classeId     String
   matiereId    String
-  jour         String   // Lundi, Mardi, ...
-  heureDebut   String   // "08:00"
-  heureFin     String   // "09:00"
-  mois         Int      // 1-12
+  jour         String // Lundi, Mardi, ...
+  heureDebut   String // "08:00"
+  heureFin     String // "09:00"
+  mois         Int // 1-12
   annee        Int
-  createdAt    DateTime @default(now())
-  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  school       School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   enseignant   Enseignant @relation(fields: [enseignantId], references: [id], onDelete: Cascade)
-  classe       Classe   @relation(fields: [classeId], references: [id], onDelete: Cascade)
-  matiere      Matiere  @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+  classe       Classe     @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  matiere      Matiere    @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+
   @@map("horaires_enseignants")
+}
+
+// ==================== AFFECTATIONS ENSEIGNANT ↔ CLASSE ↔ MATIÈRE ====================
+model Affectation {
+  id           String     @id @default(uuid())
+  schoolId     String
+  enseignantId String
+  classeId     String
+  matiereId    String
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  school       School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  enseignant   Enseignant @relation(fields: [enseignantId], references: [id], onDelete: Cascade)
+  classe       Classe     @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  matiere      Matiere    @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+
+  @@unique([enseignantId, classeId, matiereId])
+  @@index([schoolId])
+  @@map("affectations")
 }
 
 // ==================== PARENTS ====================
 model Parent {
-  id        String   @id @default(uuid())
+  id        String        @id @default(uuid())
   schoolId  String
   nom       String
   telephone String
   password  String
   email     String?
   adresse   String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  school    School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   eleves    ParentEleve[]
+
   @@unique([schoolId, telephone])
   @@index([schoolId])
   @@map("parents")
@@ -414,12 +465,13 @@ model Parent {
 
 // ==================== LIEN PARENT ↔ ÉLÈVE ====================
 model ParentEleve {
-  id       String  @id @default(uuid())
+  id       String @id @default(uuid())
   schoolId String
   parentId String
   eleveId  String
-  parent   Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  eleve    Eleve   @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  parent   Parent @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  eleve    Eleve  @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+
   @@unique([parentId, eleveId])
   @@index([eleveId])
   @@map("parent_eleves")
@@ -427,23 +479,24 @@ model ParentEleve {
 
 // ==================== ABSENCES & RETARDS ====================
 model Absence {
-  id                 String    @id @default(uuid())
+  id                 String   @id @default(uuid())
   schoolId           String
   eleveId            String
   classeId           String
   matiereId          String?
   date               DateTime
-  type               String    // absence | retard
+  type               String // absence | retard
   motif              String?
-  justifie           Boolean   @default(false)
-  statutJustificatif String    @default("non_justifie") // non_justifie | en_attente | justifie
+  justifie           Boolean  @default(false)
+  statutJustificatif String   @default("non_justifie") // non_justifie | en_attente | justifie
   enregistrePar      String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  school             School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  eleve              Eleve     @relation(fields: [eleveId], references: [id], onDelete: Cascade)
-  classe             Classe    @relation(fields: [classeId], references: [id], onDelete: Cascade)
-  matiere            Matiere?  @relation(fields: [matiereId], references: [id], onDelete: SetNull)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  school             School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  eleve              Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  classe             Classe   @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  matiere            Matiere? @relation(fields: [matiereId], references: [id], onDelete: SetNull)
+
   @@index([schoolId, date])
   @@index([eleveId, date])
   @@index([classeId, date])
@@ -452,20 +505,21 @@ model Absence {
 
 // ==================== ANNONCES ====================
 model Annonce {
-  id        String   @id @default(uuid())
+  id        String        @id @default(uuid())
   schoolId  String
   titre     String
   message   String
-  type      String   @default("info") // info | urgence | evenement | resultat
-  cible     String   @default("ecole") // ecole (tous) | parents (tous les parents) | classe (parents de la classe)
+  type      String        @default("info") // info | urgence | evenement | resultat
+  cible     String        @default("ecole") // ecole (tous) | parents (tous les parents) | classe (parents de la classe)
   classeId  String?
-  date      DateTime @default(now())
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  classe    Classe?  @relation(fields: [classeId], references: [id], onDelete: SetNull)
+  date      DateTime      @default(now())
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  school    School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classe    Classe?       @relation(fields: [classeId], references: [id], onDelete: SetNull)
   reads     AnnonceRead[]
+
   @@index([schoolId])
   @@map("annonces")
 }
@@ -474,10 +528,11 @@ model Annonce {
 model AnnonceRead {
   id         String   @id @default(uuid())
   annonceId  String
-  readerType String   // parent | eleve | enseignant
+  readerType String // parent | eleve | enseignant
   readerId   String
   readAt     DateTime @default(now())
   annonce    Annonce  @relation(fields: [annonceId], references: [id], onDelete: Cascade)
+
   @@unique([annonceId, readerType, readerId])
   @@map("annonce_reads")
 }
@@ -486,16 +541,38 @@ model AnnonceRead {
 model Notification {
   id            String   @id @default(uuid())
   schoolId      String
-  type          String   // versement, eleve, bulletin, systeme, abonnement, absence, annonce
+  type          String // versement, eleve, bulletin, systeme, abonnement, absence, annonce
   title         String
   message       String
   isRead        Boolean  @default(false)
   link          String?
-  recipientType String?  // null = interne école ; parent | enseignant | eleve | ecole (broadcast)
+  recipientType String? // null = interne école ; parent | enseignant | eleve | ecole (broadcast)
   recipientId   String?
   createdAt     DateTime @default(now())
   school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
   @@index([schoolId, isRead])
   @@index([recipientType, recipientId])
   @@map("notifications")
+}
+
+// ==================== MESSAGERIE (école ↔ parents/élèves/enseignants) ====================
+model Message {
+  id              String   @id @default(uuid())
+  schoolId        String
+  conversationKey String // "parent:<id>" | "eleve:<id>" | "enseignant:<id>"
+  senderType      String // ecole | parent | eleve | enseignant
+  senderId        String? // null si école
+  recipientType   String // ecole | parent | eleve | enseignant
+  recipientId     String? // null si destinataire = école
+  sujet           String
+  contenu         String
+  isRead          Boolean  @default(false)
+  readAt          DateTime?
+  createdAt       DateTime @default(now())
+  school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, conversationKey, createdAt])
+  @@index([schoolId, isRead])
+  @@map("messages")
 }

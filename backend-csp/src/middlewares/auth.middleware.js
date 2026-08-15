@@ -25,6 +25,34 @@ export const authenticate = async (req, res, next) => {
         };
         return next();
       }
+      if (decoded.actorType === 'enseignant') {
+        const enseignant = await prisma.enseignant.findFirst({
+          where: { id: decoded.actorId, schoolId: decoded.schoolId },
+        });
+        if (!enseignant || !enseignant.isActive) return res.status(401).json({ message: 'Compte enseignant invalide' });
+        req.user = {
+          schoolId: school.id,
+          actorType: 'enseignant',
+          actorId: enseignant.id,
+          enseignantId: enseignant.id,
+          role: 'enseignant',
+        };
+        return next();
+      }
+      if (decoded.actorType === 'eleve') {
+        const eleve = await prisma.eleve.findFirst({
+          where: { id: decoded.actorId, schoolId: decoded.schoolId },
+        });
+        if (!eleve || !eleve.isActive) return res.status(401).json({ message: 'Compte élève invalide' });
+        req.user = {
+          schoolId: school.id,
+          actorType: 'eleve',
+          actorId: eleve.id,
+          eleveId: eleve.id,
+          role: 'eleve',
+        };
+        return next();
+      }
       return res.status(401).json({ message: 'Acteur non reconnu' });
     }
 

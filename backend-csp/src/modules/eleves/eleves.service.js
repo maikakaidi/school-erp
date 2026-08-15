@@ -1,5 +1,6 @@
 import prisma from '../../config/database.js';
 import { randomBytes } from 'crypto';
+import bcrypt from 'bcrypt';
 import { createNotification } from '../notifications/notifications.service.js';
 
 const generateMatricule = () =>
@@ -158,6 +159,7 @@ export const createEleve = async (schoolId, data) => {
 
   const {
     classeId,
+    password,
     ...cleanData
   } = data;
 
@@ -168,6 +170,7 @@ export const createEleve = async (schoolId, data) => {
       ...cleanData,
       schoolId,
       matricule,
+      ...(password ? { password: await bcrypt.hash(password, 10) } : {}),
     },
   });
 
@@ -213,19 +216,22 @@ export const updateEleve = async (
 
   const {
     classeId,
+    password,
     ...cleanData
   } = data;
 
-  // Mettre à jour élève
-  await prisma.eleve.updateMany({
-
+  // Mettre à jour élève (scopé par école)
+  const updated = await prisma.eleve.updateMany({
     where: {
       id,
       schoolId,
     },
-
-    data: cleanData,
+    data: {
+      ...cleanData,
+      ...(password ? { password: await bcrypt.hash(password, 10) } : {}),
+    },
   });
+  if (updated.count === 0) throw new Error('Élève non trouvé');
 
   // Gérer inscription/classe
   if (classeId) {
@@ -234,6 +240,7 @@ export const updateEleve = async (
       await prisma.inscription.findFirst({
 
         where: {
+          schoolId,
           eleveId: id,
           anneeScolaire: '2025-2026',
         },

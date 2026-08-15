@@ -35,7 +35,7 @@ export const deleteExamen = async (req, res, next) => {
 export const addSalle = async (req, res, next) => {
   try {
     const validated = addSalleSchema.parse(req.body);
-    const salle = await examenService.addSalle(req.params.examenId, validated);
+    const salle = await examenService.addSalle(req.user.schoolId, req.params.examenId, validated);
     res.json(salle);
   } catch (error) { next(error); }
 };
@@ -43,35 +43,35 @@ export const addSalle = async (req, res, next) => {
 export const addResultat = async (req, res, next) => {
   try {
     const validated = addResultatSchema.parse(req.body);
-    const resultat = await examenService.addResultat(req.params.examenId, validated);
+    const resultat = await examenService.addResultat(req.user.schoolId, req.params.examenId, validated);
     res.json(resultat);
   } catch (error) { next(error); }
 };
 
 export const getResultats = async (req, res, next) => {
   try {
-    const resultats = await examenService.getResultats(req.params.examenId);
+    const resultats = await examenService.getResultats(req.user.schoolId, req.params.examenId);
     res.json(resultats);
   } catch (error) { next(error); }
 };
 
 export const repartition = async (req, res, next) => {
   try {
-    const rep = await examenService.repartitionSalles(req.params.examenId);
+    const rep = await examenService.repartitionSalles(req.user.schoolId, req.params.examenId);
     res.json(rep);
   } catch (error) { next(error); }
 };
 
 export const getClassement = async (req, res, next) => {
   try {
-    const classement = await examenService.getClassement(req.params.examenId);
+    const classement = await examenService.getClassement(req.user.schoolId, req.params.examenId);
     res.json(classement);
   } catch (error) { next(error); }
 };
 
 export const exportClassementPDF = async (req, res, next) => {
   try {
-    const pdfStream = await examenService.generateClassementPDF(req.params.examenId);
+    const pdfStream = await examenService.generateClassementPDF(req.user.schoolId, req.params.examenId);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=classement_examen_${req.params.examenId}.pdf`);
     pdfStream.pipe(res);

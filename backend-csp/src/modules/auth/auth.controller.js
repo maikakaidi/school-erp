@@ -1,6 +1,6 @@
 import * as authService from './auth.service.js';
 import jwt from 'jsonwebtoken';
-import { registerSchoolSchema, loginSchoolSchema, loginSuperAdminSchema, loginParentSchema } from './auth.validation.js';
+import { registerSchoolSchema, loginSchoolSchema, loginSuperAdminSchema, loginParentSchema, loginEnseignantSchema, loginEleveSchema } from './auth.validation.js';
 
 export const registerSchool = async (req, res, next) => {
   try {
@@ -30,6 +30,22 @@ export const loginParent = async (req, res, next) => {
   try {
     const { schoolPhone, phone, password } = loginParentSchema.parse(req.body);
     const result = await authService.loginParent(schoolPhone, phone, password);
+    res.json(result);
+  } catch (error) { next({ status: 401, message: error.message }); }
+};
+
+export const loginEnseignant = async (req, res, next) => {
+  try {
+    const { schoolPhone, phone, password } = loginEnseignantSchema.parse(req.body);
+    const result = await authService.loginEnseignant(schoolPhone, phone, password);
+    res.json(result);
+  } catch (error) { next({ status: 401, message: error.message }); }
+};
+
+export const loginEleve = async (req, res, next) => {
+  try {
+    const { schoolPhone, matricule, password } = loginEleveSchema.parse(req.body);
+    const result = await authService.loginEleve(schoolPhone, matricule, password);
     res.json(result);
   } catch (error) { next({ status: 401, message: error.message }); }
 };

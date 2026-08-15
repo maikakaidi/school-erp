@@ -18,6 +18,39 @@ export const getHorairesByEnseignant = async (schoolId, enseignantId, mois, anne
   });
 };
 
+export const getHorairesByClasse = async (schoolId, classeId, mois, annee) => {
+  const m = mois ? parseInt(mois) : undefined;
+  const y = annee ? parseInt(annee) : undefined;
+  return await prisma.horaireEnseignant.findMany({
+    where: {
+      schoolId,
+      classeId,
+      ...(m ? { mois: m } : {}),
+      ...(y ? { annee: y } : {}),
+    },
+    include: {
+      enseignant: { select: { id: true, nom: true, prenom: true } },
+      matiere: { select: { id: true, libelle: true } },
+    },
+    orderBy: [{ jour: 'asc' }, { heureDebut: 'asc' }],
+  });
+};
+
+export const getEmploiDuTempsEleve = async (schoolId, eleveId, mois, annee) => {
+  const inscription = await prisma.inscription.findFirst({
+    where: { schoolId, eleveId },
+    orderBy: { dateInscription: 'desc' },
+    select: { classeId: true, classe: { select: { id: true, nom: true } } },
+  });
+  if (!inscription) {
+    const error = new Error('Élève non inscrit');
+    error.status = 404;
+    throw error;
+  }
+  const horaires = await getHorairesByClasse(schoolId, inscription.classeId, mois, annee);
+  return { eleveId, classe: inscription.classe, horaires };
+};
+
 export const createHoraire = async (schoolId, data) => {
   return await prisma.horaireEnseignant.create({ data: { ...data, schoolId } });
 };

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParent } from '../context/ParentContext';
 import { fetchWithAuth } from '../api/fetchWithAuth';
-import { Home, FileText, Wallet, User, LogOut, GraduationCap, CalendarX, Bell, Megaphone } from 'lucide-react';
+import { Home, FileText, Wallet, User, LogOut, GraduationCap, CalendarX, Bell, Megaphone, CalendarDays, MessageSquare } from 'lucide-react';
 
 const T = {
   bg: '#06101a', card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -14,8 +14,10 @@ const NAV = [
   { key: 'dashboard', label: 'Accueil', icon: Home, path: '/parent' },
   { key: 'notes', label: 'Notes', icon: FileText, path: '/parent/notes' },
   { key: 'absences', label: 'Absences', icon: CalendarX, path: '/parent/absences' },
+  { key: 'emploidutemps', label: 'Emploi du temps', icon: CalendarDays, path: '/parent/emploi-du-temps' },
   { key: 'annonces', label: 'Annonces', icon: Megaphone, path: '/parent/annonces' },
   { key: 'notifications', label: 'Notifications', icon: Bell, path: '/parent/notifications' },
+  { key: 'messages', label: 'Messages', icon: MessageSquare, path: '/parent/messages' },
   { key: 'paiements', label: 'Paiements', icon: Wallet, path: '/parent/paiements' },
   { key: 'profil', label: 'Profil', icon: User, path: '/parent/profil' },
 ];
@@ -25,13 +27,14 @@ export default function ParentLayout({ children }) {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { children: kids, selectedChildId, setSelectedChildId } = useParent();
-  const [unread, setUnread] = useState({ annonces: 0, notifications: 0 });
+  const [unread, setUnread] = useState({ annonces: 0, notifications: 0, messages: 0 });
 
   const loadUnread = () => {
     Promise.all([
       fetchWithAuth('/parent/annonces/unread-count').then(d => d.count).catch(() => 0),
       fetchWithAuth('/parent/notifications/unread-count').then(d => d.count).catch(() => 0),
-    ]).then(([annonces, notifications]) => setUnread({ annonces, notifications }));
+      fetchWithAuth('/messages/unread-count').then(d => d.count).catch(() => 0),
+    ]).then(([annonces, notifications, messages]) => setUnread({ annonces, notifications, messages }));
   };
 
   useEffect(() => {

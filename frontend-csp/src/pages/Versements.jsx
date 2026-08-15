@@ -103,8 +103,25 @@ export default function Versements() {
     }
   };
 
-  const handlePrintReceipt = (recuNumber) => {
-    window.open(`/api/versements/reçu/${recuNumber}`, '_blank'); // endpoint à créer plus tard
+  const handlePrintReceipt = async (recuNumber) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`/api/versements/recu/${recuNumber}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf' },
+      });
+      if (!response.ok) throw new Error('Erreur génération du reçu');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `recu_${recuNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Erreur : ' + err.message);
+    }
   };
 return (
   <div className="fade-up">

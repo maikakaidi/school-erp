@@ -2,6 +2,7 @@ import prisma from '../../config/database.js';
 import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
 import { createNotification } from '../notifications/notifications.service.js';
+import { drawPdfFooter } from '../../utils/pdf.generator.js';
 
 function getOrdinalSuffix(n) {
   if (n === 1) return 'ère';
@@ -153,8 +154,14 @@ export const generateBulletinPDF = async (schoolId, eleveId, semestre, anneeScol
 
   // ─── Dimensions page A4 ───────────────────────────────────────────────────
   const PAGE_W = 595.28;
+  const PAGE_H = 841.89;
   const MARGIN = 28;
   const CONTENT_W = PAGE_W - MARGIN * 2;  // ~539
+  const BOTTOM_M = 46;                    // marge basse avant pied de page
+
+  // Compteur de pages pour le pied de page
+  let pageCount = 1;
+  const footer = () => drawPdfFooter(doc, { left: schoolName, right: 'Bulletin de notes', showPage: true, pageNumber: pageCount });
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const drawRect = (x, y, w, h) => doc.rect(x, y, w, h).stroke();
@@ -317,18 +324,21 @@ export const generateBulletinPDF = async (schoolId, eleveId, semestre, anneeScol
   const ROW_H = 15;
   const tableStartY = curY;
 
-  // En-tête tableau
+  // En-tête tableau (redessiné après chaque saut de page)
   const tHeaders = ['DISCIPLINES', 'Coeff', 'Moy.Classe', 'Note.Compo', 'Moy/20', 'Moy.coeff', 'Appréciation', 'Signature'];
-  fillRect(MARGIN, curY, CONTENT_W, ROW_H, '#d0d0d0');
-  let xh = MARGIN;
-  for (let i = 0; i < tHeaders.length; i++) {
-    cellText(tHeaders[i], xh, curY, tCols[i], ROW_H, { bold: true, align: 'center', fontSize: 7 });
-    xh += tCols[i];
-  }
-  hLine(MARGIN, curY, PAGE_W - MARGIN, 1);
-  hLine(MARGIN, curY + ROW_H, PAGE_W - MARGIN, 1);
-  drawTableVLines(tCols, curY, curY + ROW_H);
-  curY += ROW_H;
+  const drawTableHeader = () => {
+    fillRect(MARGIN, curY, CONTENT_W, ROW_H, '#d0d0d0');
+    let xh = MARGIN;
+    for (let i = 0; i < tHeaders.length; i++) {
+      cellText(tHeaders[i], xh, curY, tCols[i], ROW_H, { bold: true, align: 'center', fontSize: 7 });
+      xh += tCols[i];
+    }
+    hLine(MARGIN, curY, PAGE_W - MARGIN, 1);
+    hLine(MARGIN, curY + ROW_H, PAGE_W - MARGIN, 1);
+    drawTableVLines(tCols, curY, curY + ROW_H);
+    curY += ROW_H;
+  };
+  drawTableHeader();
 
   // Lignes matières
   let runningCoef = 0;
@@ -336,6 +346,14 @@ export const generateBulletinPDF = async (schoolId, eleveId, semestre, anneeScol
 
   for (let idx = 0; idx < bulletinData.matieres.length; idx++) {
     const m = bulletinData.matieres[idx];
+    // Saut de page si la ligne ne tient pas
+    if (curY + ROW_H > PAGE_H - BOTTOM_M) {
+      footer();
+      doc.addPage();
+      pageCount++;
+      curY = MARGIN;
+      drawTableHeader();
+    }
     // Alternance fond
     if (idx % 2 === 1) fillRect(MARGIN, curY, CONTENT_W, ROW_H, '#f5f5f5');
 
@@ -361,11 +379,15 @@ export const generateBulletinPDF = async (schoolId, eleveId, semestre, anneeScol
 
     runningCoef += m.coefficient;
     runningPoints += m.moyenneCoef;
-
-    if (curY > 750) { doc.addPage(); curY = MARGIN; }
   }
 
-  // Ligne TOTAL
+  // Ligne TOTAL (nouvelle page si nécessaire)
+  if (curY + ROW_H > PAGE_H - BOTTOM_M) {
+    footer();
+    doc.addPage();
+    pageCount++;
+    curY = MARGIN;
+  }
   fillRect(MARGIN, curY, CONTENT_W, ROW_H, '#d0d0d0');
   let xt = MARGIN;
   cellText('Total', xt, curY, tCols[0], ROW_H, { bold: true, align: 'left', fontSize: 8 });
@@ -379,6 +401,13 @@ export const generateBulletinPDF = async (schoolId, eleveId, semestre, anneeScol
   curY += ROW_H + 4;
 
   // ─── LIGNE MOYENNES SEMESTRES ─────────────────────────────────────────────
+  // Saut de page si les blocs restants ne tiennent pas (~220pt)
+  if (curY + 220 > PAGE_H - BOTTOM_M) {
+    footer();
+    doc.addPage();
+    pageCount++;
+    curY = MARGIN;
+  }
   const moyH = 16;
   const moy3cols = [CONTENT_W / 3, CONTENT_W / 3, CONTENT_W / 3];
   const moyStartY = curY;
@@ -532,6 +561,9 @@ export const generateBulletinPDF = async (schoolId, eleveId, semestre, anneeScol
   vLine(MARGIN + appHalfW, curY - 14, curY + appH);
   vLine(PAGE_W - MARGIN, curY - 14, curY + appH);
   hLine(MARGIN, curY + appH, PAGE_W - MARGIN, 0.8);
+
+  // Pied de page sur la dernière page
+  footer();
 
   doc.end();
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParent } from '../../context/ParentContext';
 import { fetchWithAuth } from '../../api/fetchWithAuth';
-import { Wallet } from 'lucide-react';
+import { Wallet, Download } from 'lucide-react';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -26,6 +26,27 @@ export default function ParentPaiements() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [selectedChildId]);
+
+  const downloadRecu = async (recuNumber) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`/api/versements/recu/${recuNumber}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf' },
+      });
+      if (!response.ok) throw new Error('Erreur génération du reçu');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `recu_${recuNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Erreur : ' + err.message);
+    }
+  };
 
   if (children.length === 0) {
     return <div style={{ color: T.muted, padding: 40, textAlign: 'center' }}>Aucun enfant rattaché à votre compte.</div>;
@@ -82,6 +103,13 @@ export default function ParentPaiements() {
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: T.green }}>{fmt(v.montantPaye)}</div>
               {v.reduction > 0 && <div style={{ fontSize: 10, color: T.muted }}>Réduction : {fmt(v.reduction)}</div>}
+              <button
+                onClick={() => downloadRecu(v.recuNumber)}
+                title={`Reçu ${v.recuNumber}`}
+                style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: `1px solid ${T.border}`, borderRadius: 6, padding: '4px 8px', color: T.accent, cursor: 'pointer', fontSize: 11 }}
+              >
+                <Download size={12} /> Reçu
+              </button>
             </div>
           </div>
         ))}

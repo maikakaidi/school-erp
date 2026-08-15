@@ -1,0 +1,69 @@
+import * as rapportsService from './rapports.service.js';
+import { sendExcel } from '../../utils/excel.export.js';
+
+export const getAssiduite = async (req, res, next) => {
+  try {
+    const { anneeScolaire, classeId } = req.query;
+    const data = await rapportsService.getAssiduiteParClasse(req.user.schoolId, anneeScolaire || '2025-2026', classeId || null);
+    res.json(data);
+  } catch (error) { next(error); }
+};
+
+export const getAssiduiteExcel = async (req, res, next) => {
+  try {
+    const { anneeScolaire, classeId } = req.query;
+    const data = await rapportsService.getAssiduiteParClasse(req.user.schoolId, anneeScolaire || '2025-2026', classeId || null);
+    const rows = data.rows.map((r) => ({
+      'Classe': r.classe,
+      'Effectif': r.effectif,
+      'Absences': r.absences,
+      'Retards': r.retards,
+      'Taux abs./élève': r.tauxAbsence,
+    }));
+    sendExcel(res, [{ sheetName: 'Assiduité', rows }], `assiduite_${anneeScolaire}.xlsx`);
+  } catch (error) { next(error); }
+};
+
+export const getAssiduitePdf = async (req, res, next) => {
+  try {
+    const { anneeScolaire, classeId } = req.query;
+    const stream = await rapportsService.generateAssiduitePDF(req.user.schoolId, anneeScolaire || '2025-2026', classeId || null);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="assiduite_${anneeScolaire}.pdf"`);
+    stream.pipe(res);
+  } catch (error) { next(error); }
+};
+
+export const getPaiements = async (req, res, next) => {
+  try {
+    const { anneeScolaire } = req.query;
+    const data = await rapportsService.getPaiementsEnRetard(req.user.schoolId, anneeScolaire || '2025-2026');
+    res.json(data);
+  } catch (error) { next(error); }
+};
+
+export const getPaiementsExcel = async (req, res, next) => {
+  try {
+    const { anneeScolaire } = req.query;
+    const data = await rapportsService.getPaiementsEnRetard(req.user.schoolId, anneeScolaire || '2025-2026');
+    const rows = data.rows.map((r) => ({
+      'Matricule': r.matricule,
+      'Élève': r.eleve,
+      'Classe': r.classe,
+      'Frais (FCFA)': r.fraisTotal,
+      'Payé (FCFA)': r.totalPaye,
+      'Reste (FCFA)': r.reste,
+    }));
+    sendExcel(res, [{ sheetName: 'Paiements en retard', rows }], `paiements_retard_${anneeScolaire}.xlsx`);
+  } catch (error) { next(error); }
+};
+
+export const getPaiementsPdf = async (req, res, next) => {
+  try {
+    const { anneeScolaire } = req.query;
+    const stream = await rapportsService.generatePaiementsPDF(req.user.schoolId, anneeScolaire || '2025-2026');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="paiements_retard_${anneeScolaire}.pdf"`);
+    stream.pipe(res);
+  } catch (error) { next(error); }
+};

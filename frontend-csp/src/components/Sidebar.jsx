@@ -5,7 +5,7 @@ import {
   Home, Users, UserCheck, BookOpen, FileText,
   Award, DollarSign, CreditCard, Briefcase,
   BarChart2, Settings, Shield, LogOut, ChevronRight, Clock,
-  Calculator, Table, TrendingUp, Building2, Globe, UserCheck2, CalendarX, Megaphone
+  Calculator, Table, TrendingUp, Building2, Globe, UserCheck2, CalendarX, Megaphone, CalendarDays, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchWithAuth } from '../api/fetchWithAuth';
@@ -29,6 +29,7 @@ const NAV_SCHOOL = [
     { key: 'absences',     label: 'Absences',        icon: CalendarX, path: '/absences' },
     { key: 'annonces',     label: 'Annonces',        icon: Megaphone, path: '/annonces' },
     { key: 'bulletins',    label: 'Bulletins',       icon: FileText, path: '/bulletins' },
+    { key: 'emploidutemps', label: 'Emploi du temps', icon: CalendarDays, path: '/emploi-du-temps' },
   ]},
   { section: 'EXAMENS', items: [
     { key: 'examens', label: 'Examens blancs', icon: Award, path: '/examens' },
@@ -40,12 +41,17 @@ const NAV_SCHOOL = [
   ]},
   { section: 'RESSOURCES HUMAINES', items: [
     { key: 'enseignants', label: 'Enseignants', icon: Users, path: '/enseignants' },
+    { key: 'affectations', label: 'Affectations', icon: UserCheck2, path: '/affectations' },
     { key: 'horaires',    label: 'Horaires',    icon: Clock, path: '/horaires' },
     { key: 'salaires',    label: 'Salaires',    icon: DollarSign, path: '/salaires' },
   ]},
   { section: 'RAPPORTS', items: [
     { key: 'statistiques', label: 'Statistiques',    icon: BarChart2, path: '/statistiques' },
+    { key: 'rapports',     label: 'Rapports',        icon: FileText, path: '/rapports' },
     { key: 'architecture', label: 'Architecture',    icon: Settings, path: '/architecture' },
+  ]},
+  { section: 'COMMUNICATION', items: [
+    { key: 'messages', label: 'Messagerie', icon: MessageSquare, path: '/messages' },
   ]},
   { section: 'CONFIG', items: [
     { key: 'parametres',   label: 'Paramètres',      icon: Settings, path: '/parametres' },

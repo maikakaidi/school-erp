@@ -4,6 +4,7 @@ import { requireParent } from '../../middlewares/parent.middleware.js';
 import { checkSubscription } from '../../middlewares/checkSubscription.middleware.js';
 import {
   getMe, getChildren, getDashboard, getNotes, getPayments, getAbsences,
+  getEmploiDuTemps,
   getNotifications, getUnreadNotificationsCount, markNotificationRead,
   getAnnonces, getUnreadAnnoncesCount, markAnnonceRead,
 } from './parent.controller.js';
@@ -28,6 +29,7 @@ router.get('/dashboard', getDashboard);
 router.get('/notes', getNotes);
 router.get('/payments', getPayments);
 router.get('/absences', getAbsences);
+router.get('/emploi-du-temps', getEmploiDuTemps);
 router.get('/notifications', getNotifications);
 router.get('/notifications/unread-count', getUnreadNotificationsCount);
 router.put('/notifications/:id/read', markNotificationRead);

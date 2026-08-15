@@ -11,6 +11,7 @@ export const createEnseignantSchema = z.object({
   salaireFixe: z.number().positive().optional(),
   anciennete: z.number().int().min(0).optional(),
   dateEmbauche: z.string().transform(str => new Date(str)).optional(),
+  password: z.string().min(6, 'Mot de passe minimum 6 caractères').optional(),
 });
 
 export const updateEnseignantSchema = createEnseignantSchema.partial();

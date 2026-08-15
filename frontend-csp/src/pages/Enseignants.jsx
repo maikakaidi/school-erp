@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Check, Download } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Download, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { downloadExcel } from '../api/downloadExcel';
@@ -21,6 +21,7 @@ const emptyForm = {
   salaireFixe: '',
   anciennete: '',
   dateEmbauche: '',
+  password: '',
 };
 
 export default function Enseignants() {
@@ -33,6 +34,7 @@ export default function Enseignants() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
 
   const loadEnseignants = async () => {
     setLoading(true);
@@ -70,6 +72,7 @@ export default function Enseignants() {
       salaireFixe: ens.salaireFixe || '',
       anciennete: ens.anciennete || '',
       dateEmbauche: ens.dateEmbauche?.split('T')[0] || '',
+      password: '',
     });
     setModal({ id: ens.id });
   };
@@ -96,6 +99,7 @@ export default function Enseignants() {
       anciennete: form.anciennete ? parseInt(form.anciennete) : undefined,
       dateEmbauche: form.dateEmbauche || undefined,
     };
+      if (form.password) payload.password = form.password;
       let url = '/enseignants';
       let method = 'POST';
       if (modal !== 'add') {
@@ -242,7 +246,35 @@ return (
           )}
 
           <input name="anciennete" type="number" value={form.anciennete} onChange={handleChange} placeholder={t('enseignants.form.anciennete')} style={{ width: '100%', marginBottom: 12, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }} />
-          <input name="dateEmbauche" type="date" value={form.dateEmbauche} onChange={handleChange} style={{ width: '100%', marginBottom: 20, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }} />
+          <input name="dateEmbauche" type="date" value={form.dateEmbauche} onChange={handleChange} style={{ width: '100%', marginBottom: 12, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }} />
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 12, color: T.muted, marginBottom: 4, display: 'block' }}>
+              {modal === 'add' ? 'Mot de passe (espace enseignant)' : 'Nouveau mot de passe (laisser vide pour ne pas changer)'}
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={handleChange}
+                minLength={6}
+                placeholder="Min. 6 caractères"
+                style={{ width: '100%', padding: 8, paddingRight: 36, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, boxSizing: 'border-box' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(s => !s)}
+                title={showPassword ? 'Masquer' : 'Afficher'}
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: T.muted, display: 'flex', alignItems: 'center', padding: 4 }}
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+            <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
+              Connexion : téléphone de l'école + téléphone de l'enseignant + ce mot de passe.
+            </div>
+          </div>
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button onClick={closeModal} style={{ padding: '8px 16px', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.muted, cursor: 'pointer' }}>{t('common.cancel')}</button>

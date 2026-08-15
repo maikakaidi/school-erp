@@ -28,6 +28,7 @@ const emptyForm = {
   adresseParent: '',
   telParent: '',
   classeId: '',   // ← AJOUT
+  password: '',
 };
 
 export default function Eleves() {
@@ -99,6 +100,7 @@ export default function Eleves() {
       adresseParent: eleve.adresseParent || '',
       telParent: eleve.telParent || '',
       classeId,
+      password: '',
     });
     setModal({ id: eleve.id });
   };
@@ -126,6 +128,7 @@ export default function Eleves() {
         adresseParent: form.adresseParent,
         telParent: form.telParent,
         classeId: form.classeId || undefined, // ← envoyer la classe
+        password: form.password || undefined,
       };
 
       let url = '/eleves';
@@ -319,6 +322,22 @@ export default function Eleves() {
                   <option key={c.id} value={c.id}>{c.nom}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Accès espace élève */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 11, color: T.muted }}>Mot de passe (espace élève)</label>
+              <input
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={handleInputChange}
+                placeholder="Laisser vide pour ne pas changer"
+                style={{ width: '100%', background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', color: T.text }}
+              />
+              <div style={{ fontSize: 10, color: T.muted, marginTop: 4 }}>
+                Le matricule (affiche dans la liste) + ce mot de passe permettront à l'élève de se connecter.
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

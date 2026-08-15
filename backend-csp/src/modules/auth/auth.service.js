@@ -82,3 +82,80 @@ export const loginParent = async (schoolPhone, phone, password) => {
     school: { id: school.id, name: school.name },
   };
 };
+
+export const loginEnseignant = async (schoolPhone, phone, password) => {
+  const school = await prisma.school.findUnique({ where: { phone: schoolPhone } });
+  if (!school) throw new Error('Établissement introuvable');
+  if (!school.isActive) throw new Error('Établissement désactivé');
+
+  const enseignant = await prisma.enseignant.findFirst({
+    where: { schoolId: school.id, telephone: phone },
+  });
+  if (!enseignant) throw new Error('Identifiants invalides');
+  if (!enseignant.password) throw new Error('Compte enseignant sans mot de passe');
+  if (!enseignant.isActive) throw new Error('Compte enseignant désactivé');
+  const valid = await bcrypt.compare(password, enseignant.password);
+  if (!valid) throw new Error('Identifiants invalides');
+
+  const accessToken = jwt.sign(
+    { schoolId: school.id, actorType: 'enseignant', actorId: enseignant.id, role: 'enseignant' },
+    process.env.JWT_SECRET,
+    { expiresIn: '8h' }
+  );
+  const refreshToken = jwt.sign(
+    { schoolId: school.id, actorType: 'enseignant', actorId: enseignant.id, role: 'enseignant' },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
+  return {
+    accessToken,
+    refreshToken,
+    enseignant: {
+      id: enseignant.id,
+      nom: enseignant.nom,
+      prenom: enseignant.prenom,
+      telephone: enseignant.telephone,
+      email: enseignant.email,
+      specialite: enseignant.specialite,
+    },
+    school: { id: school.id, name: school.name },
+  };
+};
+
+export const loginEleve = async (schoolPhone, matricule, password) => {
+  const school = await prisma.school.findUnique({ where: { phone: schoolPhone } });
+  if (!school) throw new Error('Établissement introuvable');
+  if (!school.isActive) throw new Error('Établissement désactivé');
+
+  const eleve = await prisma.eleve.findFirst({
+    where: { schoolId: school.id, matricule },
+  });
+  if (!eleve) throw new Error('Identifiants invalides');
+  if (!eleve.password) throw new Error('Compte élève sans mot de passe');
+  if (!eleve.isActive) throw new Error('Compte élève désactivé');
+  const valid = await bcrypt.compare(password, eleve.password);
+  if (!valid) throw new Error('Identifiants invalides');
+
+  const accessToken = jwt.sign(
+    { schoolId: school.id, actorType: 'eleve', actorId: eleve.id, role: 'eleve' },
+    process.env.JWT_SECRET,
+    { expiresIn: '8h' }
+  );
+  const refreshToken = jwt.sign(
+    { schoolId: school.id, actorType: 'eleve', actorId: eleve.id, role: 'eleve' },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
+  return {
+    accessToken,
+    refreshToken,
+    eleve: {
+      id: eleve.id,
+      matricule: eleve.matricule,
+      nom: eleve.nom,
+      prenom: eleve.prenom,
+      sexe: eleve.sexe,
+    },
+    school: { id: school.id, name: school.name },
+  };
+};
