@@ -5,12 +5,22 @@ export const getAllClasses = async (
   anneeScolaire
 ) => {
 
+  // Si aucune année fournie, récupérer l'année courante de l'école
+  if (!anneeScolaire) {
+    const current = await prisma.academicYear.findFirst({
+      where: { schoolId, isCurrent: true },
+      select: { name: true },
+    });
+    if (current) {
+      anneeScolaire = current.name;
+    }
+  }
+
   const where = {
     schoolId,
     isActive: true,
   };
 
-  // Ajouter le filtre seulement si fourni
   if (anneeScolaire) {
     where.anneeScolaire = anneeScolaire;
   }

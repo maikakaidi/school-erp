@@ -169,7 +169,7 @@ export default function Inscriptions() {
       </div>
 
       {/* Tableau des inscriptions */}
-      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden' }}>
+      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'auto' }}>
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>{t('common.loading')}</div>
         ) : inscriptions.length === 0 ? (
