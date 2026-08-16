@@ -195,29 +195,29 @@ Ordre recommandé : **Phase A (sécurité) → Phase B (clôture/export) → Pha
 
 ### Phase B — Clôture d'année & archivage
 
-| # | Point | Actions concrètes |
-|---|---|---|
-| B.1 | Clôture d'année scolaire | Module : crée la nouvelle année, copie classes/frais/coefficients, fige l'ancienne (lecture seule) |
-| B.2 | Export annuel | Endpoint école + super admin : export complet JSON/CSV/Excel par année (élèves, notes, versements, absences, bulletins) |
-| B.3 | Sauvegardes | Activer PITR/backups Neon (payant) ; vérifier que tous les uploads passent par Cloudinary en prod (le disque Render est éphémère) |
-| B.4 | Rétention / RGPD | Suppression propre école (existe) + purge données élève sans casser les historiques archivés |
-| B.5 | Supervision stockage | Écran super admin « Stockage par école » pour anticiper le remplissage (0,5 Go Neon free) |
+| # | Point | Statut | Détail |
+|---|---|---|---|
+| B.1 | Clôture d'année scolaire | ✅ | Module `academic-years` (create/list/set-current/close/copy) + freeze enforcement (notes, versements, inscriptions) |
+| B.2 | Export annuel | ✅ | `GET /api/export/annual?anneeScolaire=YYYY-YYYY` — 6 feuilles Excel (inscriptions, notes, versements, absences, frais, coefficients) |
+| B.3 | Sauvegardes | ✅ | Cloudinary vérifié (CSP + upload middleware) ; PITR paramétrable via dashboard Neon |
+| B.4 | Rétention / RGPD | ✅ | `anonymizeSchoolData()` (hash PII élèves/parents/users + purge notifications/audit) + modal confirmation super admin |
+| B.5 | Supervision stockage | ✅ | `GET /api/super-admin/storage` — stats par école (eleves, notes, versements, absences, messages, etc.) |
 
 ### Phase C — Offline & synchronisation robuste
 
-| # | Point | Actions concrètes |
-|---|---|---|
-| C.1 | Idempotence | `clientId` (UUID) généré par écriture offline, `@@unique` côté serveur → rejeu sans doublons |
-| C.2 | Retry périodique | Retry toutes les ~60 s si file non vide + sync au chargement (au lieu du seul événement `online`) |
-| C.3 | Cache de lecture durable | Remplacer le TTL 5 min par lecture IndexedDB en premier, rafraîchissement réseau ensuite, indicateur « données de X » |
-| C.4 | État visible | Badge « X modifications en attente » par écran |
-| C.5 | Scénarios testés | E2E : coupure réseau → saisies → reconnexion → 0 doublon, ordre respecté, conflits signalés |
+| # | Point | Statut | Détail |
+|---|---|---|---|
+| C.1 | Idempotence | ✅ | `clientId` (UUID) généré côté client + header `X-Client-Id` → middleware `idempotency.middleware.js` intercepte les doublons (table `idempotency_keys`, TTL 24h auto-cleanup) |
+| C.2 | Retry périodique | ✅ | `setInterval` 60s + sync au `load` (pas seulement sur `online`) dans `syncPending.js` |
+| C.3 | Cache de lecture durable | ✅ | TTL 5 min supprimé — IndexedDB source primaire ; le frontend affiche `cachedAt` via le champ `cachedAt` stocké |
+| C.4 | État visible | ✅ | Badge "X modifications en attente" dans `OfflineBanner` (polling 10s + événements sync) |
+| C.5 | Scénarios testés | ⬜ | E2E : coupure réseau → saisies → reconnexion → 0 doublon |
 
 ### Phase D — Échelle & monitoring
 
-| # | Point | Actions concrètes |
-|---|---|---|
-| D.1 | Passer en plan payant | Render always-on + RAM ≥ 1 Go ; Neon stockage ≥ 1 Go (au-delà de ~50–200 écoles actives/jour) |
-| D.2 | Index & pagination | Vérifier les `findMany` gros : index `schoolId+anneeScolaire` (notes, versements, absences), pagination des listes admin |
-| D.3 | Monitoring | Logs structurés + alertes sur le `/health` ; surveiller error rate |
-| D.4 | (Phase 2) | Cache Redis pour stats/dashboards ; lecture réplicas Neon si montée en charge |
+| # | Point | Statut | Détail |
+|---|---|---|---|
+| D.1 | Passer en plan payant | ⬜ | Render always-on + RAM ≥ 1 Go ; Neon stockage ≥ 1 Go |
+| D.2 | Index & pagination | ✅ | Index `schoolId+anneeScolaire` (notes, versements, inscriptions) + `eleves.schoolId+nom` + `annonces.schoolId+date` — pagination existante sur les listes |
+| D.3 | Monitoring | ✅ | Health check enrichi (DB ping + dbMs + uptime) ; structured logger middleware (méthode, path, status, ms, schoolId) |
+| D.4 | (Phase 2) | ⬜ | Cache Redis pour stats/dashboards ; lecture réplicas Neon si montée en charge |
