@@ -85,7 +85,7 @@ export default function Settings() {
     if (!newYearName.trim()) return;
     setCreatingYear(true);
     try {
-      await fetchWithAuth('/api/academic-years', { method: 'POST', body: JSON.stringify({ name: newYearName.trim() }) });
+      await fetchWithAuth('/academic-years', { method: 'POST', body: JSON.stringify({ name: newYearName.trim() }) });
       setNewYearName('');
       await refreshYears();
       setMessage('Année scolaire créée');
@@ -106,7 +106,7 @@ export default function Settings() {
     if (!confirm('Clôturer cette année ? Les écritures seront bloquées.')) return;
     setClosingYear(yearId);
     try {
-      await fetchWithAuth(`/api/academic-years/${yearId}/close`, { method: 'POST' });
+      await fetchWithAuth(`/academic-years/${yearId}/close`, { method: 'POST' });
       await refreshYears();
       setMessage('Année clôturée');
       setTimeout(() => setMessage(''), 3000);
@@ -118,7 +118,7 @@ export default function Settings() {
     if (!confirm(`Copier les données vers l'année "${name}" ?`)) return;
     setCopyingYear(yearId);
     try {
-      const res = await fetchWithAuth(`/api/academic-years/${yearId}/copy`, { method: 'POST', body: JSON.stringify({ targetYearId: yearId }) });
+      const res = await fetchWithAuth(`/academic-years/${yearId}/copy`, { method: 'POST', body: JSON.stringify({ targetYearId: yearId }) });
       await refreshYears();
       setMessage(`Données copiées (${res?.copied || 0} inscriptions)`);
       setTimeout(() => setMessage(''), 3000);

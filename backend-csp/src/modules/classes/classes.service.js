@@ -13,6 +13,16 @@ export const getAllClasses = async (
     });
     if (current) {
       anneeScolaire = current.name;
+    } else {
+      // Fallback: année la plus récente
+      const latest = await prisma.academicYear.findFirst({
+        where: { schoolId },
+        orderBy: { createdAt: 'desc' },
+        select: { name: true },
+      });
+      if (latest) {
+        anneeScolaire = latest.name;
+      }
     }
   }
 

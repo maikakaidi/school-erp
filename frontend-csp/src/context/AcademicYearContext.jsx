@@ -13,7 +13,7 @@ export function AcademicYearProvider({ children }) {
 
   const fetchYears = useCallback(async () => {
     try {
-      const data = await fetchWithAuth('/api/academic-years');
+      const data = await fetchWithAuth('/academic-years');
       setYears(data || []);
       const current = data?.find((y) => y.isCurrent);
       if (current) {
@@ -32,7 +32,7 @@ export function AcademicYearProvider({ children }) {
   }, [fetchYears]);
 
   const setCurrentYear = useCallback(async (yearId) => {
-    await fetchWithAuth('/api/academic-years/set-current', {
+    await fetchWithAuth('/academic-years/set-current', {
       method: 'POST',
       body: JSON.stringify({ yearId }),
     });
