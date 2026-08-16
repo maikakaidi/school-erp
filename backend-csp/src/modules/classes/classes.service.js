@@ -1,5 +1,13 @@
 import prisma from '../../config/database.js';
 
+function normalize(str) {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
 export const getAllClasses = async (
   schoolId,
   anneeScolaire
@@ -35,9 +43,8 @@ export const getAllClasses = async (
     where.anneeScolaire = anneeScolaire;
   }
 
-  return await prisma.classe.findMany({
+  const all = await prisma.classe.findMany({
     where,
-
     include: {
       inscriptions: {
         include: {
@@ -45,12 +52,21 @@ export const getAllClasses = async (
         },
       },
     },
-
     orderBy: [
       { niveau: 'asc' },
       { nom: 'asc' },
     ],
   });
+
+  // Dédoublonner par nom normalisé (accents, casse)
+  const seen = new Map();
+  for (const c of all) {
+    const key = normalize(c.nom);
+    if (!seen.has(key)) {
+      seen.set(key, c);
+    }
+  }
+  return Array.from(seen.values());
 };
 
 export const getClasseById = async (id, schoolId) => {
