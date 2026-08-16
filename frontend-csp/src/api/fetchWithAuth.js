@@ -78,13 +78,15 @@ export async function fetchWithAuth(endpoint, options = {}) {
   } catch (err) {
     if (isGet && !navigator.onLine) {
       const cached = await getCachedApiResponse(endpoint).catch(() => null);
-      if (cached) return cached;
+      if (cached) return cached.data;
     }
 
     if (!isGet && !navigator.onLine) {
+      const clientId = `cid-${crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)}`;
       await addPendingAction({
         endpoint,
         method,
+        clientId,
         body: options.body ? JSON.parse(options.body) : null,
       });
       throw new Error('Hors ligne — action enregistrée pour sync ultérieur');

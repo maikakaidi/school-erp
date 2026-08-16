@@ -75,14 +75,17 @@ export async function clearStore(storeName) {
 }
 
 export async function addPendingAction(action) {
+  const clientId = action.clientId || `cid-${crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)}`;
   const db = await openDB();
   const tx = db.transaction(STORES.pendingActions, 'readwrite');
   const store = tx.objectStore(STORES.pendingActions);
   const record = {
     id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    clientId,
     ...action,
     timestamp: new Date().toISOString(),
     synced: false,
+    retries: 0,
   };
   store.put(record);
   return new Promise((resolve, reject) => {
@@ -107,9 +110,7 @@ export async function getCachedApiResponse(key) {
   const all = await getFromStore(STORES.settings);
   const record = all.find((r) => r.id === key);
   if (!record) return null;
-  const maxAge = 5 * 60 * 1000;
-  if (Date.now() - record.cachedAt > maxAge) return null;
-  return record.data;
+  return { data: record.data, cachedAt: record.cachedAt };
 }
 
 export { STORES };

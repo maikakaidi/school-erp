@@ -1,22 +1,34 @@
 import { useState, useEffect } from 'react';
-import { WifiOff, Wifi, CheckCircle } from 'lucide-react';
+import { WifiOff, Wifi, CheckCircle, Clock } from 'lucide-react';
+import { getPendingActions } from '../utils/offlineDb';
 
 export default function OfflineBanner() {
   const [offline, setOffline] = useState(!navigator.onLine);
   const [syncResult, setSyncResult] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const refreshCount = async () => {
+    try {
+      const actions = await getPendingActions();
+      setPendingCount(actions?.length || 0);
+    } catch { /* noop */ }
+  };
 
   useEffect(() => {
-    const onOnline = () => { setOffline(false); setSyncResult(null); };
+    refreshCount();
+    const onOnline = () => { setOffline(false); setSyncResult(null); refreshCount(); };
     const onOffline = () => { setOffline(true); setSyncResult(null); };
-    const onSync = (e) => setSyncResult(e.detail);
+    const onSync = (e) => { setSyncResult(e.detail); refreshCount(); };
 
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
     window.addEventListener('sync-complete', onSync);
+    const interval = setInterval(refreshCount, 10_000);
     return () => {
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
       window.removeEventListener('sync-complete', onSync);
+      clearInterval(interval);
     };
   }, []);
 
@@ -48,6 +60,20 @@ export default function OfflineBanner() {
     );
   }
 
+  if (!offline && pendingCount > 0) {
+    return (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+        background: '#d4921a', color: '#fff',
+        padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        fontSize: 13, fontWeight: 600,
+      }}>
+        <Clock size={14} />
+        {pendingCount} modification(s) en attente de synchronisation
+      </div>
+    );
+  }
+
   if (!offline) return null;
 
   return (
@@ -58,7 +84,7 @@ export default function OfflineBanner() {
       fontSize: 13, fontWeight: 600,
     }}>
       <WifiOff size={14} />
-      Mode hors ligne — les modifications seront synchronisées à la reconnexion
+      Mode hors ligne{pendingCount > 0 ? ` — ${pendingCount} modification(s) en attente` : ''}
     </div>
   );
 }

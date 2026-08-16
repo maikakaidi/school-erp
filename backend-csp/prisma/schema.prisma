@@ -613,3 +613,15 @@ model AuditLog {
   @@index([action])
   @@map("audit_logs")
 }
+
+// ==================== IDEMPOTENCY ====================
+model IdempotencyKey {
+  key      String   @id
+  endpoint String
+  method   String
+  response Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("idempotency_keys")
+}

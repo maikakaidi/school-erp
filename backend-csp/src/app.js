@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { localeMiddleware } from './middlewares/locale.middleware.js';
+import { idempotencyMiddleware } from './middlewares/idempotency.middleware.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -84,6 +85,14 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('src/uploads'));
 
+// Idempotency — sur les mutations (POST/PUT/PATCH/DELETE) avec X-Client-Id
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && req.headers['x-client-id']) {
+    return idempotencyMiddleware(req, res, next);
+  }
+  next();
+});
+
 // Rate limiting — global (très large, pour éviter les abus)
 const globalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000 });
 app.use(globalLimiter);
@@ -105,6 +114,20 @@ const superAdminLimiter = rateLimit({
 
 // Locale middleware (AVANT les routes pour que req.t() soit disponible partout)
 app.use(localeMiddleware);
+
+// Structured request logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const ms = Date.now() - start;
+    const level = res.statusCode >= 500 ? 'ERROR' : res.statusCode >= 400 ? 'WARN' : 'INFO';
+    const log = { level, method: req.method, path: req.originalUrl, status: res.statusCode, ms, ts: new Date().toISOString() };
+    if (req.user?.schoolId) log.schoolId = req.user.schoolId;
+    if (level !== 'INFO') console.error(JSON.stringify(log));
+    else if (process.env.NODE_ENV !== 'production' || ms > 1000) console.log(JSON.stringify(log));
+  });
+  next();
+});
 
 // Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -145,8 +168,18 @@ app.use('/api/rapports', rapportsRoutes);
 app.use('/api/academic-years', academicYearsRoutes);
 app.use('/api/export', exportRoutes);
 
-// Health check
-app.get('/health', (req, res) => res.status(200).json({ status: 'OK' }));
+// Health check — with DB ping
+import prisma from './config/database.js';
+app.get('/health', async (req, res) => {
+  const start = Date.now();
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    const dbMs = Date.now() - start;
+    res.status(200).json({ status: 'OK', db: 'connected', dbMs, uptime: process.uptime() | 0 });
+  } catch (err) {
+    res.status(503).json({ status: 'DEGRADED', db: 'disconnected', error: err.message });
+  }
+});
 
 // Servir le frontend buildé (production, un seul service)
 const frontendDist = path.resolve(__dirname, '../../frontend-csp/dist');
