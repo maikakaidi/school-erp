@@ -220,6 +220,88 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Années scolaires */}
+      <div style={{ marginTop: 24, background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
+        <h3 style={{ marginBottom: 16, color: T.text }}>
+          <Clock size={16} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+          {t('settings.academicYears', 'Années scolaires')}
+        </h3>
+
+        {/* Créer une année */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          <input
+            value={newYearName}
+            onChange={e => setNewYearName(e.target.value)}
+            placeholder="2026-2027"
+            onKeyDown={e => e.key === 'Enter' && handleCreateYear()}
+            style={{ flex: 1, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', color: T.text }}
+          />
+          <button onClick={handleCreateYear} disabled={creatingYear || !newYearName.trim()} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+            background: T.accent, border: 'none', borderRadius: 8, color: '#fff',
+            cursor: newYearName.trim() ? 'pointer' : 'not-allowed', fontWeight: 600, fontSize: 13,
+          }}>
+            <Plus size={14} /> {creatingYear ? '...' : t('settings.createYear', 'Créer')}
+          </button>
+        </div>
+
+        {/* Liste des années */}
+        {years.length === 0 ? (
+          <p style={{ color: T.muted, fontSize: 13 }}>Aucune année scolaire</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {years.map(y => (
+              <div key={y.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', borderRadius: 10,
+                background: y.isCurrent ? T.accent + '15' : 'transparent',
+                border: `1px solid ${y.isCurrent ? T.accent : T.border}30`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{y.name}</span>
+                  {y.isCurrent && (
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: T.green + '20', color: T.green, fontWeight: 700 }}>
+                      {t('settings.current', 'Courante')}
+                    </span>
+                  )}
+                  {y.isArchived && (
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: T.muted + '20', color: T.muted, fontWeight: 700 }}>
+                      {t('settings.archived', 'Archivée')}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {!y.isCurrent && !y.isArchived && (
+                    <button onClick={() => handleSetCurrent(y.id)} title="Définir courante" style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      background: T.green + '15', border: `1px solid ${T.green}30`, color: T.green, cursor: 'pointer',
+                    }}>
+                      <ChevronRight size={12} style={{ verticalAlign: 'middle' }} /> {t('settings.setCurrent', 'Courante')}
+                    </button>
+                  )}
+                  {!y.isArchived && (
+                    <button onClick={() => handleCloseYear(y.id)} disabled={closingYear === y.id} title="Clôturer" style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      background: T.accent + '15', border: `1px solid ${T.accent}30`, color: T.accent, cursor: 'pointer',
+                    }}>
+                      <Archive size={12} style={{ verticalAlign: 'middle' }} /> {closingYear === y.id ? '...' : t('settings.close', 'Clôturer')}
+                    </button>
+                  )}
+                  {!y.isArchived && (
+                    <button onClick={() => handleCopyYear(y.id, y.name)} disabled={copyingYear === y.id} title="Copier inscriptions" style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      background: T.blue + '15', border: `1px solid ${T.blue}30`, color: T.blue, cursor: 'pointer',
+                    }}>
+                      <Copy size={12} style={{ verticalAlign: 'middle' }} /> {copyingYear === y.id ? '...' : t('settings.copy', 'Copier')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
