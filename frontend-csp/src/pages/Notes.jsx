@@ -70,7 +70,7 @@ export default function Notes() {
   const saveNotes = async (eleveId, devoir, composition, appreciation) => {
     setSaving(true);
     try {
-      await fetchWithAuth('/notes', {
+      const result = await fetchWithAuth('/notes', {
         method: 'POST',
         body: JSON.stringify({
           eleveId,
@@ -83,6 +83,12 @@ export default function Notes() {
           appreciation: appreciation || '',
         }),
       });
+      if (result?._pending) {
+        setMessage('Note enregistrée (en attente de sync)');
+        setTimeout(() => setMessage(''), 3000);
+        setSaving(false);
+        return;
+      }
       setMessage(t('notes.saved'));
       setTimeout(() => setMessage(''), 2000);
       loadEleves();

@@ -1,7 +1,8 @@
 // src/pages/Inscriptions.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Search } from 'lucide-react';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import PendingBadge from '../components/PendingBadge';
 import { useTranslation } from 'react-i18next';
 import { useAcademicYear } from '../context/AcademicYearContext';
 
@@ -71,6 +72,12 @@ export default function Inscriptions() {
     loadInscriptions();
   }, [filterAnnee]);
 
+  useEffect(() => {
+    const handler = () => loadInscriptions();
+    window.addEventListener('sync-complete', handler);
+    return () => window.removeEventListener('sync-complete', handler);
+  }, [filterAnnee]);
+
   const openAdd = () => {
     setForm(emptyForm);
     setModal('add');
@@ -111,7 +118,13 @@ export default function Inscriptions() {
         url = `/inscriptions/${modal.id}`;
         method = 'PUT';
       }
-      await fetchWithAuth(url, { method, body: JSON.stringify(payload) });
+      const result = await fetchWithAuth(url, { method, body: JSON.stringify(payload) });
+      if (result?._pending && modal === 'add') {
+        const tempItem = { id: result.tempId, ...payload, _pending: true, dateInscription: new Date().toISOString(), eleve: { nom: '?', prenom: 'Hors ligne' }, classe: { nom: '...' } };
+        setInscriptions(prev => [tempItem, ...prev]);
+        closeModal();
+        return;
+      }
       closeModal();
       loadInscriptions();
     } catch (err) {
@@ -195,7 +208,8 @@ export default function Inscriptions() {
                   <td style={{ padding: '12px 16px', fontSize: 12, color: T.muted }}>{insc.reduction}%</td>
                   <td style={{ padding: '12px 16px', fontSize: 12, color: T.muted }}>{new Date(insc.dateInscription).toLocaleDateString()}</td>
                   <td style={{ padding: '12px 16px' }}>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      {insc._pending && <PendingBadge />}
                       <button onClick={() => openEdit(insc)} style={{ width: 30, height: 30, borderRadius: 7, background: T.accent + '15', border: `1px solid ${T.accent}30`, cursor: 'pointer' }}>
                         <Edit2 size={12} color={T.accent} />
                       </button>

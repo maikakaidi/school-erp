@@ -94,6 +94,12 @@ export default function Versements() {
         commentaire: form.commentaire,
       };
       const result = await fetchWithAuth('/versements', { method: 'POST', body: JSON.stringify(payload) });
+      if (result?._pending) {
+        setSuccess(`Paiement enregistré (en attente de sync)`);
+        setForm({ ...form, montant: '', reduction: 0, commentaire: '' });
+        setLoading(false);
+        return;
+      }
       setSuccess(`${t('versements.recordSaved')}: ${result.versement.recuNumber}`);
       await loadVersements(eleve.id);
       await loadSituation(eleve.id);

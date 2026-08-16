@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit, Filter, CreditCard } from 'lucide-react';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import PendingBadge from '../components/PendingBadge';
 import { useTranslation } from 'react-i18next';
 
 const T = {
@@ -20,6 +21,12 @@ export default function Depenses() {
   const [form, setForm] = useState({ libelle: '', montant: '', rubrique: 'Divers', dateDepense: new Date().toISOString().split('T')[0] });
 
   useEffect(() => { load(); }, [filter]);
+
+  useEffect(() => {
+    const handler = () => load();
+    window.addEventListener('sync-complete', handler);
+    return () => window.removeEventListener('sync-complete', handler);
+  }, [filter]);
 
   const load = async () => {
     setLoading(true);
@@ -41,7 +48,14 @@ export default function Depenses() {
       if (editing) {
         await fetchWithAuth(`/depenses/${editing.id}`, { method: 'PUT', body: JSON.stringify(body) });
       } else {
-        await fetchWithAuth('/depenses', { method: 'POST', body: JSON.stringify(body) });
+        const result = await fetchWithAuth('/depenses', { method: 'POST', body: JSON.stringify(body) });
+        if (result?._pending) {
+          const tempItem = { id: result.tempId, ...body, _pending: true };
+          setDepenses(prev => [tempItem, ...prev]);
+          setShowForm(false); setEditing(null);
+          setForm({ libelle: '', montant: '', rubrique: 'Divers', dateDepense: new Date().toISOString().split('T')[0] });
+          return;
+        }
       }
       setShowForm(false); setEditing(null);
       setForm({ libelle: '', montant: '', rubrique: 'Divers', dateDepense: new Date().toISOString().split('T')[0] });
@@ -128,7 +142,8 @@ export default function Depenses() {
                 </td>
                 <td style={{ padding: '10px 16px', fontSize: 13, color: T.red, fontWeight: 600 }}>{d.montant.toLocaleString()} FCFA</td>
                 <td style={{ padding: '10px 16px' }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {d._pending && <PendingBadge />}
                     <button onClick={() => { setEditing(d); setForm({ libelle: d.libelle, montant: d.montant, rubrique: d.rubrique, dateDepense: d.dateDepense?.split('T')[0] || '' }); setShowForm(true); }}
                       style={{ background: T.blue + '20', border: `1px solid ${T.blue}40`, borderRadius: 6, padding: '4px 8px', cursor: 'pointer', color: T.blue }}><Edit size={13} /></button>
                     <button onClick={() => handleDelete(d.id)}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Download, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import PendingBadge from '../components/PendingBadge';
 import { downloadExcel } from '../api/downloadExcel';
 
 const T = {
@@ -52,6 +53,12 @@ export default function Enseignants() {
 
   useEffect(() => {
     loadEnseignants();
+  }, [page, search]);
+
+  useEffect(() => {
+    const handler = () => loadEnseignants();
+    window.addEventListener('sync-complete', handler);
+    return () => window.removeEventListener('sync-complete', handler);
   }, [page, search]);
 
   const openAdd = () => {
@@ -106,7 +113,14 @@ export default function Enseignants() {
         url = `/enseignants/${modal.id}`;
         method = 'PUT';
       }
-      await fetchWithAuth(url, { method, body: JSON.stringify(payload) });
+      const result = await fetchWithAuth(url, { method, body: JSON.stringify(payload) });
+      if (result?._pending && modal === 'add') {
+        const tempItem = { id: result.tempId, ...payload, _pending: true };
+        setEnseignants(prev => [tempItem, ...prev]);
+        setTotal(prev => prev + 1);
+        closeModal();
+        return;
+      }
       closeModal();
       loadEnseignants();
     } catch (err) {
@@ -171,6 +185,7 @@ return (
                 <td style={{ padding: 12 }}>{e.estVacataire ? t('enseignants.vacataire') : t('enseignants.permanent')}</td>
                 <td style={{ padding: 12 }}>{e.estVacataire ? `${e.tauxHoraire} FCFA/h` : `${e.salaireFixe} FCFA/mois`}</td>
                 <td style={{ padding: 12, textAlign: 'center' }}>
+                  {e._pending && <PendingBadge />}
                   <button onClick={() => openEdit(e)} style={{ background: T.accent + '20', border: 'none', borderRadius: 6, padding: '4px 8px', marginRight: 6, cursor: 'pointer' }}>
                     <Edit2 size={12} color={T.accent} />
                   </button>

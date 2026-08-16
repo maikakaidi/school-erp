@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, X, Check, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import PendingBadge from '../components/PendingBadge';
 import { downloadExcel } from '../api/downloadExcel';
 
 const T = {
@@ -79,6 +80,12 @@ export default function Eleves() {
     loadEleves();
   }, [page, search, classeFilter]);
 
+  useEffect(() => {
+    const handler = () => loadEleves();
+    window.addEventListener('sync-complete', handler);
+    return () => window.removeEventListener('sync-complete', handler);
+  }, [page, search, classeFilter]);
+
   const openAdd = () => {
     setForm(emptyForm);
     setModal('add');
@@ -139,11 +146,19 @@ export default function Eleves() {
         method = 'PUT';
       }
 
-      await fetchWithAuth(url, {
+      const result = await fetchWithAuth(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
+      if (result?._pending && modal === 'add') {
+        const tempItem = { id: result.tempId, ...payload, _pending: true, matricule: '—', classe: { nom: classes.find(c => c.id === payload.classeId)?.nom || '...' } };
+        setEleves(prev => [tempItem, ...prev]);
+        setTotal(prev => prev + 1);
+        closeModal();
+        return;
+      }
 
       closeModal();
       loadEleves();
@@ -249,7 +264,8 @@ export default function Eleves() {
                       <td style={{ padding: '12px 16px', fontSize: 12, color: T.muted }}>{e.telephone || '—'}</td>
                       <td style={{ padding: '12px 16px', fontSize: 12, color: T.muted }}>{e.nomParent || '—'}</td>
                       <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', gap: 6 }}>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          {e._pending && <PendingBadge />}
                           <button onClick={() => openEdit(e)} style={{ width: 30, height: 30, borderRadius: 7, background: T.accent + '15', border: `1px solid ${T.accent}30`, cursor: 'pointer' }}>
                             <Edit2 size={12} color={T.accent} />
                           </button>

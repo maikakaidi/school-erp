@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, X, Check, Users } from 'lucide-react';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import PendingBadge from '../components/PendingBadge';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -37,6 +38,12 @@ export default function Affectations() {
   useEffect(() => { load(); }, [enseignantFilter]);
 
   useEffect(() => {
+    const handler = () => load();
+    window.addEventListener('sync-complete', handler);
+    return () => window.removeEventListener('sync-complete', handler);
+  }, [enseignantFilter]);
+
+  useEffect(() => {
     fetchWithAuth('/enseignants?page=1&limit=200').then(d => setEnseignants(d.enseignants || [])).catch(() => {});
     fetchWithAuth('/classes').then(d => setClasses(Array.isArray(d) ? d : d.classes || d.data || [])).catch(() => {});
     fetchWithAuth('/matieres').then(d => setMatieres(Array.isArray(d) ? d : d.matieres || d.data || [])).catch(() => {});
@@ -46,7 +53,15 @@ export default function Affectations() {
     if (!form.enseignantId || !form.classeId || !form.matiereId) return;
     setMsg(null);
     try {
-      await fetchWithAuth('/affectations', { method: 'POST', body: JSON.stringify(form) });
+      const result = await fetchWithAuth('/affectations', { method: 'POST', body: JSON.stringify(form) });
+      if (result?._pending) {
+        const tempItem = { id: result.tempId, ...form, _pending: true, isActive: true, enseignant: enseignants.find(e => e.id === form.enseignantId) || { nom: '?', prenom: '...' }, classe: classes.find(c => c.id === form.classeId) || { nom: '...' }, matiere: matieres.find(m => m.id === form.matiereId) || { libelle: '...' } };
+        setAffectations(prev => [tempItem, ...prev]);
+        setModal(false);
+        setForm({ enseignantId: '', classeId: '', matiereId: '' });
+        setMsg({ type: 'ok', text: 'Affectation créée (en attente de sync)' });
+        return;
+      }
       setModal(false);
       setForm({ enseignantId: '', classeId: '', matiereId: '' });
       setMsg({ type: 'ok', text: 'Affectation créée' });
@@ -125,6 +140,7 @@ export default function Affectations() {
                       }}>{a.isActive ? 'Active' : 'Inactive'}</span>
                     </td>
                     <td style={{ padding: 12, textAlign: 'center' }}>
+                      {a._pending && <PendingBadge />}
                       <button onClick={() => remove(a.id)} style={{ background: T.red + '20', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer' }}>
                         <Trash2 size={12} color={T.red} />
                       </button>

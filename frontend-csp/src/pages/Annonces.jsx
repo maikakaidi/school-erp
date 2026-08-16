@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Search, Megaphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import PendingBadge from '../components/PendingBadge';
 
 const T = {
   card: '#0c1c2c',
@@ -63,6 +64,12 @@ export default function Annonces() {
     loadAnnonces();
   }, [search, cibleFilter]);
 
+  useEffect(() => {
+    const handler = () => loadAnnonces();
+    window.addEventListener('sync-complete', handler);
+    return () => window.removeEventListener('sync-complete', handler);
+  }, [search, cibleFilter]);
+
   const openAdd = () => {
     setForm(emptyForm);
     setModal('add');
@@ -91,11 +98,17 @@ export default function Annonces() {
     try {
       const payload = { ...form, classeId: form.cible === 'classe' ? form.classeId : undefined };
       if (modal === 'add') {
-        await fetchWithAuth('/annonces', {
+        const result = await fetchWithAuth('/annonces', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (result?._pending) {
+          const tempItem = { id: result.tempId, ...payload, _pending: true, isActive: true, date: payload.date || new Date().toISOString(), classe: null };
+          setAnnonces(prev => [tempItem, ...prev]);
+          closeModal();
+          return;
+        }
       } else {
         await fetchWithAuth(`/annonces/${modal.id}`, {
           method: 'PUT',
@@ -237,7 +250,8 @@ export default function Annonces() {
                         </button>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', gap: 6 }}>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          {a._pending && <PendingBadge />}
                           <button onClick={() => openEdit(a)} style={{ width: 30, height: 30, borderRadius: 7, background: T.accent + '15', border: `1px solid ${T.accent}30`, cursor: 'pointer' }}>
                             <Edit2 size={12} color={T.accent} />
                           </button>

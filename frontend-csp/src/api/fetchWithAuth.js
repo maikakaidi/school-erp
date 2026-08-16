@@ -87,13 +87,10 @@ export async function fetchWithAuth(endpoint, options = {}) {
 
     if (!isGet && isNetworkError(err)) {
       const clientId = `cid-${crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)}`;
-      await addPendingAction({
-        endpoint,
-        method,
-        clientId,
-        body: options.body ? JSON.parse(options.body) : null,
-      });
-      throw new Error('Hors ligne — action enregistrée pour sync ultérieur');
+      const body = options.body ? JSON.parse(options.body) : null;
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      await addPendingAction({ endpoint, method, clientId, body });
+      return { _pending: true, tempId, endpoint, method, body, clientId };
     }
 
     throw err;

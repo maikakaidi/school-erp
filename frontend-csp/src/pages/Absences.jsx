@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Edit2, Trash2, X, Check, Download, UserX, CalendarX, CheckCircle2, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import PendingBadge from '../components/PendingBadge';
 import { downloadExcel } from '../api/downloadExcel';
 
 const T = {
@@ -105,6 +106,12 @@ export default function Absences() {
     loadAbsences();
   }, [page, search, classeFilter, typeFilter, dateDebut, dateFin]);
 
+  useEffect(() => {
+    const handler = () => loadAbsences();
+    window.addEventListener('sync-complete', handler);
+    return () => window.removeEventListener('sync-complete', handler);
+  }, [page, search, classeFilter, typeFilter, dateDebut, dateFin]);
+
   const classeEleves = useMemo(
     () => (form.classeId ? eleves.filter((e) => e.classe?.id === form.classeId || e.inscriptions?.[0]?.classeId === form.classeId) : eleves),
     [eleves, form.classeId]
@@ -174,11 +181,18 @@ export default function Absences() {
     try {
       const payload = { ...form, matiereId: form.matiereId || undefined, motif: form.motif || undefined };
       if (modal === 'add') {
-        await fetchWithAuth('/absences', {
+        const result = await fetchWithAuth('/absences', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (result?._pending) {
+          const tempItem = { id: result.tempId, ...payload, _pending: true, justifie: false, statutJustificatif: 'non_justifie', eleve: { nom: '?', prenom: 'Hors ligne', matricule: '—' }, classe: { nom: '' }, matiere: null };
+          setAbsences(prev => [tempItem, ...prev]);
+          setStats(prev => ({ ...prev, totalAbsences: prev.totalAbsences + 1, enAttente: prev.enAttente + 1 }));
+          closeModal();
+          return;
+        }
       } else {
         await fetchWithAuth(`/absences/${modal.id}`, {
           method: 'PUT',
@@ -200,11 +214,18 @@ export default function Absences() {
       return;
     }
     try {
-      await fetchWithAuth('/absences/bulk', {
+      const result = await fetchWithAuth('/absences/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...bulkForm, matiereId: bulkForm.matiereId || undefined, motif: bulkForm.motif || undefined }),
       });
+      if (result?._pending) {
+        const temps = bulkForm.eleveIds.map((eid, i) => ({ id: `${result.tempId}-${i}`, eleveId: eid, classeId: bulkForm.classeId, date: bulkForm.date, type: bulkForm.type, motif: bulkForm.motif, _pending: true, justifie: false, statutJustificatif: 'non_justifie', eleve: { nom: '?', prenom: 'Hors ligne', matricule: '—' }, classe: { nom: '' }, matiere: null }));
+        setAbsences(prev => [...temps, ...prev]);
+        setStats(prev => ({ ...prev, totalAbsences: prev.totalAbsences + temps.length, enAttente: prev.enAttente + temps.length }));
+        closeModal();
+        return;
+      }
       closeModal();
       loadAbsences();
     } catch (err) {
@@ -369,7 +390,8 @@ export default function Absences() {
                       )}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        {a._pending && <PendingBadge />}
                         <button onClick={() => openEdit(a)} style={{ width: 30, height: 30, borderRadius: 7, background: T.accent + '15', border: `1px solid ${T.accent}30`, cursor: 'pointer' }}>
                           <Edit2 size={12} color={T.accent} />
                         </button>
