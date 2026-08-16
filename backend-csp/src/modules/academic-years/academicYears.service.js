@@ -24,7 +24,18 @@ export const createYear = async (schoolId, { name, startDate, endDate }) => {
   });
   if (existing) throw Object.assign(new Error('Cette année scolaire existe déjà'), { status: 409 });
 
-  // Si c'est la première année, la définir comme courante
+  // Générer les dates par défaut à partir du nom (ex: "2026-2027" → sept 2026 - juin 2027)
+  if (!startDate || !endDate) {
+    const match = name.match(/^(\d{4})-(\d{4})$/);
+    if (match) {
+      startDate = startDate || `${match[1]}-09-01`;
+      endDate = endDate || `${match[2]}-06-30`;
+    } else {
+      startDate = startDate || new Date().toISOString().slice(0, 10);
+      endDate = endDate || new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
+    }
+  }
+
   const count = await prisma.academicYear.count({ where: { schoolId } });
   const isCurrent = count === 0;
 
