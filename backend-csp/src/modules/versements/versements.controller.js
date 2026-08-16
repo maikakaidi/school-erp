@@ -1,12 +1,20 @@
 import * as versementService from './versements.service.js';
 import { createVersementSchema } from './versements.validation.js';
 import { sendExcel } from '../../utils/excel.export.js';
+import { logAudit, auditActorFromReq } from '../audit/audit.service.js';
 import prisma from '../../config/database.js';
 
 export const create = async (req, res, next) => {
   try {
     const validated = createVersementSchema.parse(req.body);
     const versement = await versementService.createVersement(req.user.schoolId, validated);
+    logAudit({
+      ...auditActorFromReq(req),
+      action: 'versement.create',
+      targetType: 'versement',
+      targetId: versement.id,
+      payload: { eleveId: versement.eleveId, montantPaye: versement.montantPaye, recuNumber: versement.recuNumber },
+    });
     res.status(201).json({ message: 'Versement enregistré', versement });
   } catch (error) { next(error); }
 };

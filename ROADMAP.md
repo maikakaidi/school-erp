@@ -2,7 +2,7 @@
 
 Ce document permet à n'importe quel·le développeur·se (même sans contexte) de **continuer**, **finir** ou **améliorer** le projet. Il décrit l'état actuel, les décisions d'architecture, les pièges connus et, priorité par priorité, la marche à suivre.
 
-> Branche de travail : `feature/espace-parent`
+> Branche de travail : `master` (les travaux `feature/espace-parent` ont été fusionnés, commit `f12e7ad`)
 > Dépôt racine : `C:\xampp8.2\htdocs\api.csp` (backend + frontend dans le même dépôt).
 
 ---
@@ -53,13 +53,15 @@ Application de gestion scolaire multi-tenant (SaaS) : chaque **école** a son es
 | 2 | Absences & retards | ✅ Terminé | Table `absences`, `/api/absences` (CRUD + bulk + export), page admin, page parent |
 | 3 | Notifications ciblées | ✅ Terminé | `Notification.recipientType/recipientId`, notifs parent (absence, annonce), endpoints parent |
 | 4 | Annonces | ✅ Terminé | Table `annonces` + `annonce_reads`, `/api/annonces` (CRUD), génération de notifs parent, pages admin + parent |
-| 5 | Espace enseignant | ⏳ À faire | Voir §7 |
-| 6 | Bulletins / reçus PDF | ⏳ À faire | Backend PDF déjà partiel (`/api/bulletins`) |
-| 7 | Emploi du temps | ⏳ À faire | `horaires` existent côté admin |
-| 8 | Espace élève | ⏳ À faire | |
-| 9 | Messagerie + rapports | ⏳ À faire | |
+| 5 | Espace enseignant | ✅ Terminé | Login prof, `/api/prof/*`, layout `EnseignantLayout`, pages (dashboard, notes, absences, emploi du temps) |
+| 6 | Bulletins / reçus PDF | ✅ Terminé | Backend PDF + exports Excel/PDF des rapports |
+| 7 | Emploi du temps | ✅ Terminé | `/api/horaires` (admin) + `/api/horaires/classe` + `/api/prof/emploi-du-temps` |
+| 8 | Espace élève | ✅ Terminé | Login élève (matricule), `/api/eleve/*`, layout `EleveLayout` |
+| 9 | Messagerie + rapports | ✅ Terminé | `Messages`/`MessagesInbox`/`Rapports`, badges non-lus, rapports assiduité + paiements |
+| 10 | Durcissement prod — Phase A (sécurité) | ✅ Terminé | Mots de passe durcis, refresh tokens révocables (table `sessions`), rate limit super admin, audit log (`audit_logs`) |
+| 10 | Durcissement prod — Phases B–D | ⏳ À faire | Voir §10 (clôture/export, offline, échelle) |
 
-**Carte métier « acteurs » actuelle :** parent = activé ; enseignant/élève = JWT prévu dans `auth.middleware.js` mais `actorType` `enseignant`/`eleve` renvoie encore `401 Acteur non reconnu`.
+**Carte métier « acteurs » actuelle :** parent, enseignant et élève activés (`actorType` reconnu dans `auth.middleware.js`), super admin verrouillé sur `/super-admin`.
 
 ---
 
@@ -90,7 +92,7 @@ npm run dev                         # dev serveur (port 3000) — nécessite VIT
 ```
 
 ### Base d'essai (seed)
-`prisma/seed.js` : école de test `690000000` / `ecole123` (CSP Molière), super admin `691234567` / `SuperAdmin123`. Un parent de test a été créé lors des vérifications : `Test E2E` — téléphone `699000001` / `parent123`.
+`prisma/seed.js` : école de test `690000000` / `Ecole123!` (CSP Molière), super admin `691234567` / `SuperAdmin123!`. Les deux comptes ont `mustChangePassword=true` → au premier login, l'UI force le changement de mot de passe (page `/change-password`). Un parent de test a été créé lors des vérifications : `Test E2E` — téléphone `699000001` / `parent123`.
 
 ---
 
@@ -171,7 +173,51 @@ npm run dev                         # dev serveur (port 3000) — nécessite VIT
 
 ---
 
-## 9. État du dépôt (à valider/commiter)
+## 9. État du dépôt
 
-La branche contient des modifications non commitées + migrations non trackées. Avant de poursuivre, il est conseillé de commiter :
-`backend-csp/` (schéma, app.js, middlewares, modules absences/annonces/parent/parents, tests), `frontend-csp/` (pages, layout, routes, locales), `prisma/migrations/*` (3 dossiers : espace parent, absences, annonces+notifications ciblées). Voir `git status` pour la liste complète.
+Travaux P1–P9 commités et poussés : `feature/espace-parent` fusionné sur `master` (commit `f12e7ad`, 86 fichiers, +5880/−304) → déploiement Render déclenché. Base Neon nettoyée (16 écoles de test supprimées, 7 écoles restantes), 10 migrations appliquées.
+
+---
+
+## 10. Priorités 10+ — Durcissement production (plan d'attaque)
+
+Ordre recommandé : **Phase A (sécurité) → Phase B (clôture/export) → Phase C (offline) → Phase D (échelle).**
+
+### Phase A — Sécurité ✅ Terminé (migration `20260816000000_add_security_hardening`)
+
+| # | Point | Statut | Actions réalisées |
+|---|---|---|---|
+| A.1 | Mots de passe par défaut | ✅ | `seed.js` : `SuperAdmin123!` / `Ecole123!` + `mustChangePassword=true` (les comptes existants encore sous l'ancien mot de passe sont durcis au prochain seed). Politique min 8 car. + 1 maj. + 1 chiffre (`src/utils/passwordPolicy.js`) appliquée sur `register-school`, `reset-password` super admin et `change-password`. Login renvoie `mustChangePassword` ; le frontend force le passage par `/change-password` |
+| A.2 | Refresh token révocable | ✅ | Table `sessions` (tokenId=jti, actorType, actorId, schoolId, expiresAt, revoked). Chaque login crée une session ; `/auth/refresh` fait la rotation (révoque l'ancien, émet le nouveau) ; `/auth/logout` révoque ; `/auth/change-password` révoque toutes les sessions de l'acteur. `fetchWithAuth` rejoue la requête après refresh |
+| A.3 | Rate limit super admin | ✅ | `superAdminLimiter` (60 req / 15 min) sur `/api/super-admin/*` (en plus du global) |
+| A.4 | Audit log | ✅ | Table `audit_logs` + `src/modules/audit/audit.service.js`. Traces : paiements (versements), dépenses (create/update/delete), suppression élève, actions super admin (activate/deactivate/renew/add-days/reset-password/delete school). Ne bloque jamais l'action métier |
+| A.5 | Vérification finale | ✅ | `src/__tests__/security.test.js` + smoke E2E réel : login mdp durci, brute-force rejeté, refresh rotation, logout révocation, CORS origine inconnue → 403, accès inter-écoles scoped par `schoolId` |
+
+### Phase B — Clôture d'année & archivage
+
+| # | Point | Actions concrètes |
+|---|---|---|
+| B.1 | Clôture d'année scolaire | Module : crée la nouvelle année, copie classes/frais/coefficients, fige l'ancienne (lecture seule) |
+| B.2 | Export annuel | Endpoint école + super admin : export complet JSON/CSV/Excel par année (élèves, notes, versements, absences, bulletins) |
+| B.3 | Sauvegardes | Activer PITR/backups Neon (payant) ; vérifier que tous les uploads passent par Cloudinary en prod (le disque Render est éphémère) |
+| B.4 | Rétention / RGPD | Suppression propre école (existe) + purge données élève sans casser les historiques archivés |
+| B.5 | Supervision stockage | Écran super admin « Stockage par école » pour anticiper le remplissage (0,5 Go Neon free) |
+
+### Phase C — Offline & synchronisation robuste
+
+| # | Point | Actions concrètes |
+|---|---|---|
+| C.1 | Idempotence | `clientId` (UUID) généré par écriture offline, `@@unique` côté serveur → rejeu sans doublons |
+| C.2 | Retry périodique | Retry toutes les ~60 s si file non vide + sync au chargement (au lieu du seul événement `online`) |
+| C.3 | Cache de lecture durable | Remplacer le TTL 5 min par lecture IndexedDB en premier, rafraîchissement réseau ensuite, indicateur « données de X » |
+| C.4 | État visible | Badge « X modifications en attente » par écran |
+| C.5 | Scénarios testés | E2E : coupure réseau → saisies → reconnexion → 0 doublon, ordre respecté, conflits signalés |
+
+### Phase D — Échelle & monitoring
+
+| # | Point | Actions concrètes |
+|---|---|---|
+| D.1 | Passer en plan payant | Render always-on + RAM ≥ 1 Go ; Neon stockage ≥ 1 Go (au-delà de ~50–200 écoles actives/jour) |
+| D.2 | Index & pagination | Vérifier les `findMany` gros : index `schoolId+anneeScolaire` (notes, versements, absences), pagination des listes admin |
+| D.3 | Monitoring | Logs structurés + alertes sur le `/health` ; surveiller error rate |
+| D.4 | (Phase 2) | Cache Redis pour stats/dashboards ; lecture réplicas Neon si montée en charge |

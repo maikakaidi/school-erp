@@ -94,6 +94,13 @@ const schoolLimiter = rateLimit({
   message: { message: 'Trop de requêtes, veuillez réessayer dans 1 minute' },
 });
 
+// Rate limiting — Super Admin (plus strict, route critique)
+const superAdminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60, // 60 requêtes / 15 min
+  message: { message: 'Trop de requêtes, veuillez réessayer plus tard' },
+});
+
 // Locale middleware (AVANT les routes pour que req.t() soit disponible partout)
 app.use(localeMiddleware);
 
@@ -106,7 +113,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 
 // Routes protegees
 app.use('/api/schools', schoolRoutes);
-app.use('/api/super-admin', superAdminRoutes);
+app.use('/api/super-admin', superAdminLimiter, superAdminRoutes);
 app.use('/api/eleves', elevesRoutes);
 app.use('/api/enseignants', enseignantsRoutes);
 app.use('/api/classes', classesRoutes);

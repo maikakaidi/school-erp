@@ -1,5 +1,6 @@
 import express from 'express';
-import { registerSchool, loginSchool, loginSuperAdmin, loginParent, loginEnseignant, loginEleve, refreshToken } from './auth.controller.js';
+import { registerSchool, loginSchool, loginSuperAdmin, loginParent, loginEnseignant, loginEleve, refreshToken, logout, changePassword } from './auth.controller.js';
+import { authenticate } from '../../middlewares/auth.middleware.js';
 const router = express.Router();
 
 /**
@@ -45,5 +46,19 @@ router.post('/login-enseignant', loginEnseignant);
  */
 router.post('/login-eleve', loginEleve);
 router.post('/refresh', refreshToken);
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Révocation du refresh token (déconnexion)
+ */
+router.post('/logout', logout);
+/**
+ * @swagger
+ * /auth/change-password:
+ *   post:
+ *     summary: Change le mot de passe du compte connecté (école, super admin, acteurs)
+ */
+router.post('/change-password', authenticate, changePassword);
 
 export default router;

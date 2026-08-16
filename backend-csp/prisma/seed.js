@@ -2,24 +2,43 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
+const DEFAULT_SUPER_PASSWORD = 'SuperAdmin123!';
+const DEFAULT_SCHOOL_PASSWORD = 'Ecole123!';
+const LEGACY_SUPER_PASSWORD = 'SuperAdmin123';
+const LEGACY_SCHOOL_PASSWORD = 'ecole123';
+
 async function main() {
   // Super Admin
   const superAdminPhone = '691234567';
-  const hashedSuper = await bcrypt.hash('SuperAdmin123', 10);
-  await prisma.superAdmin.upsert({
-    where: { phone: superAdminPhone },
-    update: {},
-    create: { phone: superAdminPhone, password: hashedSuper },
-  });
-  console.log('Super Admin OK');
+  const hashedSuper = await bcrypt.hash(DEFAULT_SUPER_PASSWORD, 10);
+  const existingSuper = await prisma.superAdmin.findUnique({ where: { phone: superAdminPhone } });
+  if (existingSuper) {
+    // Durcissement : si l'ancien mot de passe par défaut est encore en place, on le remplace
+    const legacy = await bcrypt.compare(LEGACY_SUPER_PASSWORD, existingSuper.password);
+    await prisma.superAdmin.update({
+      where: { id: existingSuper.id },
+      data: legacy
+        ? { password: hashedSuper, mustChangePassword: true }
+        : { mustChangePassword: existingSuper.mustChangePassword },
+    });
+  } else {
+    await prisma.superAdmin.create({
+      data: { phone: superAdminPhone, password: hashedSuper, mustChangePassword: true },
+    });
+  }
+  console.log('Super Admin OK (mot de passe par défaut durci)');
 
   // Ecole test
   const schoolPhone = '690000000';
-  const hashedSchool = await bcrypt.hash('ecole123', 10);
+  const hashedSchool = await bcrypt.hash(DEFAULT_SCHOOL_PASSWORD, 10);
   let school;
   const existing = await prisma.school.findUnique({ where: { phone: schoolPhone } });
   if (existing) {
-    school = existing;
+    const legacy = await bcrypt.compare(LEGACY_SCHOOL_PASSWORD, existing.password);
+    school = await prisma.school.update({
+      where: { id: existing.id },
+      data: legacy ? { password: hashedSchool, mustChangePassword: true } : {},
+    });
   } else {
     school = await prisma.school.create({
       data: {
@@ -29,10 +48,11 @@ async function main() {
         subscriptionStatus: 'active',
         trialDays: 15,
         isActive: true,
+        mustChangePassword: true,
       },
     });
   }
-  console.log('Ecole test OK');
+  console.log('Ecole test OK (mot de passe par défaut durci)');
 
   // Classes
   const classNames = [

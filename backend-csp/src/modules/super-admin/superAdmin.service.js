@@ -43,7 +43,10 @@ export const addDays = async (schoolId, days) => {
 
 export const resetSchoolPassword = async (schoolId, newPassword) => {
   const hashed = await bcrypt.hash(newPassword, 10);
-  return await prisma.school.update({ where: { id: schoolId }, data: { password: hashed } });
+  return await prisma.school.update({
+    where: { id: schoolId },
+    data: { password: hashed, mustChangePassword: true },
+  });
 };
 
 export const deleteSchool = async (schoolId) => {

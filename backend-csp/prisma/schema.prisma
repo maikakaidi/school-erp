@@ -9,10 +9,11 @@ datasource db {
 
 // ==================== SUPER ADMIN ====================
 model SuperAdmin {
-  id        String   @id @default(uuid())
-  phone     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+  id                 String   @id @default(uuid())
+  phone              String   @unique
+  password           String
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
 
   @@map("super_admins")
 }
@@ -35,6 +36,7 @@ model School {
   subscriptionStart  DateTime?
   subscriptionEnd    DateTime?
   isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -575,4 +577,38 @@ model Message {
   @@index([schoolId, conversationKey, createdAt])
   @@index([schoolId, isRead])
   @@map("messages")
+}
+
+// ==================== SESSIONS (refresh tokens révocables) ====================
+model Session {
+  id        String   @id @default(uuid())
+  tokenId   String   @unique // jti du refresh token
+  actorType String   // school | super_admin | parent | enseignant | eleve
+  actorId   String
+  schoolId  String?
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([actorType, actorId])
+  @@index([revoked])
+  @@map("sessions")
+}
+
+// ==================== JOURNAL D'AUDIT ====================
+model AuditLog {
+  id         String   @id @default(uuid())
+  schoolId   String?
+  actorType  String
+  actorId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  payload    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([schoolId])
+  @@index([actorType, actorId])
+  @@index([action])
+  @@map("audit_logs")
 }

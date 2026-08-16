@@ -1,6 +1,7 @@
 import * as eleveService from './eleves.service.js';
 import { z } from 'zod';
 import { sendExcel } from '../../utils/excel.export.js';
+import { logAudit, auditActorFromReq } from '../audit/audit.service.js';
 
 const createEleveSchema = z.object({
   nom: z.string().min(1),
@@ -61,6 +62,7 @@ export const update = async (req, res, next) => {
 export const remove = async (req, res, next) => {
   try {
     await eleveService.deleteEleve(req.params.id, req.user.schoolId);
+    logAudit({ ...auditActorFromReq(req), action: 'eleve.delete', targetType: 'eleve', targetId: req.params.id });
     res.status(204).send();
   } catch (error) { next(error); }
 };

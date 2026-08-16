@@ -15,6 +15,7 @@ import ComingSoon from './pages/ComingSoon';
 import Architecture from './pages/Architecture';
 import Login from './pages/auth/Login';
 import RegisterSchool from './pages/auth/RegisterSchool';
+import ChangePassword from './pages/auth/ChangePassword';
 import Inscriptions from './pages/Inscriptions';
 import Bulletins from './pages/Bulletins';
 import Versements from './pages/Versements';
@@ -85,6 +86,10 @@ function AppRoutes() {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (user.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
   }
 
   if (user.actorType === 'parent') {
@@ -195,6 +200,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<RegisterSchool />} />
+            <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/*" element={<AppRoutes />} />
           </Routes>
         </NotificationProvider>

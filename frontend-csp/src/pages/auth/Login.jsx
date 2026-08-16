@@ -65,7 +65,11 @@ export default function Login() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Erreur de connexion');
       const schoolData = data.school || (mode === 'parent' ? { name: data.school?.name } : null);
-      login(data.accessToken, data.refreshToken, schoolData);
+      login(data.accessToken, data.refreshToken, schoolData, data.mustChangePassword);
+      if (data.mustChangePassword) {
+        navigate('/change-password');
+        return;
+      }
       if (mode === 'parent') navigate('/parent');
       else if (mode === 'enseignant') navigate('/enseignant');
       else if (mode === 'eleve') navigate('/eleve');

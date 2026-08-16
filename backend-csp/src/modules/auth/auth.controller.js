@@ -1,6 +1,5 @@
 import * as authService from './auth.service.js';
-import jwt from 'jsonwebtoken';
-import { registerSchoolSchema, loginSchoolSchema, loginSuperAdminSchema, loginParentSchema, loginEnseignantSchema, loginEleveSchema } from './auth.validation.js';
+import { registerSchoolSchema, loginSchoolSchema, loginSuperAdminSchema, loginParentSchema, loginEnseignantSchema, loginEleveSchema, changePasswordSchema } from './auth.validation.js';
 
 export const registerSchool = async (req, res, next) => {
   try {
@@ -53,19 +52,25 @@ export const loginEleve = async (req, res, next) => {
 export const refreshToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    let newToken;
-    if (decoded.actorType && decoded.schoolId) {
-      newToken = jwt.sign(
-        { schoolId: decoded.schoolId, actorType: decoded.actorType, actorId: decoded.actorId, role: decoded.role },
-        process.env.JWT_SECRET,
-        { expiresIn: '8h' }
-      );
-    } else if (decoded.schoolId) {
-      newToken = jwt.sign({ schoolId: decoded.schoolId }, process.env.JWT_SECRET, { expiresIn: '8h' });
-    } else if (decoded.superAdminId) {
-      newToken = jwt.sign({ superAdminId: decoded.superAdminId }, process.env.JWT_SECRET, { expiresIn: '8h' });
-    } else throw new Error('Invalid refresh');
-    res.json({ accessToken: newToken });
-  } catch (error) { next({ status: 401, message: 'Refresh token invalide' }); }
+    if (!refreshToken) throw new Error('Refresh token requis');
+    const result = await authService.refreshTokens(refreshToken);
+    res.json(result);
+  } catch (error) { next({ status: 401, message: 'Refresh token invalide ou expiré' }); }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) throw new Error('Refresh token requis');
+    await authService.logoutSession(refreshToken);
+    res.json({ message: 'Déconnecté avec succès' });
+  } catch (error) { next({ status: 401, message: 'Refresh token invalide ou expiré' }); }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+    await authService.changePassword(req, currentPassword, newPassword);
+    res.json({ message: 'Mot de passe modifié avec succès. Veuillez vous reconnecter.' });
+  } catch (error) { next(error); }
 };

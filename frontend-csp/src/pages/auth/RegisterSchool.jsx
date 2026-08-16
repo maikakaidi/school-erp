@@ -89,6 +89,9 @@ export default function RegisterSchool() {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            <p style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
+              Au moins 8 caractères, dont une majuscule et un chiffre.
+            </p>
           </div>
           <div style={{ fontSize: 12, color: T.accent, marginBottom: 16 }}>{t('auth.trialInfo')}</div>
           {error && <div style={{ color: '#b83838', fontSize: 12, marginBottom: 16 }}>{error}</div>}
