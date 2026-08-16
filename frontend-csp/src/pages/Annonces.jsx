@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Search, Megaphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
@@ -139,6 +139,17 @@ export default function Annonces() {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+    if (modal) {
+      const scrollParent = document.querySelector('[style*="overflow"]') || document.documentElement;
+      scrollParent.scrollTop = 0;
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [modal]);
 
   return (
     <div className="fade-up">
