@@ -211,7 +211,7 @@ Ordre recommandé : **Phase A (sécurité) → Phase B (clôture/export) → Pha
 | C.2 | Retry périodique | ✅ | `setInterval` 60s + sync au `load` (pas seulement sur `online`) dans `syncPending.js` |
 | C.3 | Cache de lecture durable | ✅ | TTL 5 min supprimé — IndexedDB source primaire ; le frontend affiche `cachedAt` via le champ `cachedAt` stocké |
 | C.4 | État visible | ✅ | Badge "X modifications en attente" dans `OfflineBanner` (polling 10s + événements sync) |
-| C.5 | Scénarios testés | ⬜ | E2E : coupure réseau → saisies → reconnexion → 0 doublon |
+| C.5 | Scénarios testés | ✅ | `offline-e2e.test.js` : 23 tests — idempotence middleware, fallback gracieux DB, flow offline→sync→0 doublon, circuit breaker, health check, index D.2 |
 
 ### Phase D — Échelle & monitoring
 
