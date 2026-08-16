@@ -1,4 +1,5 @@
 import prisma from '../../config/database.js';
+import { isYearArchived } from '../academic-years/academicYears.service.js';
 
 export const getAllInscriptions = async (schoolId, anneeScolaire) => {
   const where = { schoolId };
@@ -18,6 +19,9 @@ export const getInscriptionById = async (id, schoolId) => {
 };
 
 export const createInscription = async (schoolId, data) => {
+  if (await isYearArchived(schoolId, data.anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — inscription impossible'), { status: 403 });
+  }
   // Vérifier que l'élève et la classe appartiennent bien à l'école
   const eleve = await prisma.eleve.findFirst({ where: { id: data.eleveId, schoolId } });
   if (!eleve) throw new Error('Élève non trouvé dans cette école');

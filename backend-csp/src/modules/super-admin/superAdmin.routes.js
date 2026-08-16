@@ -10,11 +10,13 @@ router.use(authenticate, requireSuperAdmin);
 
 router.get('/schools', saController.getAllSchools);
 router.get('/dashboard', saController.getDashboardStats);
+router.get('/storage', saController.getStorageStats);
 router.patch('/activate/:id', saController.activateSchool);
 router.patch('/deactivate/:id', saController.deactivateSchool);
 router.patch('/renew/:id', validate(renewSchema), saController.renewSchool);
 router.patch('/add-days/:id', validate(addDaysSchema), saController.addDays);
 router.patch('/reset-password/:id', validate(resetPasswordSchema), saController.resetSchoolPassword);
+router.post('/anonymize/:id', saController.anonymizeSchool);
 router.delete('/delete/:id', saController.deleteSchool);
 
 export default router;

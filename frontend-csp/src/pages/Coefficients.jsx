@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Save, Edit2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -10,9 +11,10 @@ const T = {
 
 export default function Coefficients() {
   const { t } = useTranslation();
+  const { years, currentYear } = useAcademicYear();
   const [classes, setClasses] = useState([]);
   const [matieres, setMatieres] = useState([]);
-  const [annee, setAnnee] = useState('2025-2026');
+  const [annee, setAnnee] = useState(currentYear);
   const [coeffs, setCoeffs] = useState({});
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export default function Coefficients() {
       <div style={{ marginBottom: 20 }}>
         <label style={{ marginRight: 10, color: T.muted }}>{t('coefficients.anneeScolaire')}</label>
         <select value={annee} onChange={e => setAnnee(e.target.value)} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 12px', color: T.text }}>
-          <option>2024-2025</option><option>2025-2026</option><option>2026-2027</option>
+          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
         </select>
       </div>
 

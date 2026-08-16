@@ -3,6 +3,7 @@ import { fetchWithAuth } from '../api/fetchWithAuth';
 import { Save, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { downloadExcel } from '../api/downloadExcel';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -12,12 +13,13 @@ const T = {
 
 export default function Notes() {
   const { t } = useTranslation();
+  const { years, currentYear } = useAcademicYear();
   const [classes, setClasses] = useState([]);
   const [matieres, setMatieres] = useState([]);
   const [classeId, setClasseId] = useState('');
   const [matiereId, setMatiereId] = useState('');
   const [semestre, setSemestre] = useState(1);
-  const [anneeScolaire, setAnneeScolaire] = useState('2025-2026');
+  const [anneeScolaire, setAnneeScolaire] = useState(currentYear);
   const [eleves, setEleves] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -130,7 +132,7 @@ export default function Notes() {
         <div>
           <label style={{ fontSize: 11, color: T.muted }}>{t('notes.anneeScolaire')}</label>
           <select value={anneeScolaire} onChange={e => setAnneeScolaire(e.target.value)} style={{ width: '100%', background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 8, color: T.text }}>
-            <option>2024-2025</option><option>2025-2026</option><option>2026-2027</option>
+            {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
           </select>
         </div>
       </div>

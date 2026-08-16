@@ -3,6 +3,7 @@ import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
 import { createNotification } from '../notifications/notifications.service.js';
 import { drawPdfFooter, formatFCFA, nombreEnLettres } from '../../utils/pdf.generator.js';
+import { isYearArchived } from '../academic-years/academicYears.service.js';
 
 // Numéro de reçu séquentiel lisible : REC-YYYY-NNNN (par école)
 export const nextReceiptNumber = (anneeScolaire, lastRecuNumber) => {
@@ -25,6 +26,9 @@ const generateReceiptNumber = async (schoolId, anneeScolaire) => {
 };
 
 export const createVersement = async (schoolId, data) => {
+  if (await isYearArchived(schoolId, data.anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — paiement impossible'), { status: 403 });
+  }
   const montantPaye = data.montant - (data.reduction || 0);
   const eleve = await prisma.eleve.findFirst({ where: { id: data.eleveId, schoolId } });
   if (!eleve) throw new Error('Élève non trouvé');

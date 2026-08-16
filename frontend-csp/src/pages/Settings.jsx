@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import { useAcademicYear } from '../context/AcademicYearContext';
+import { Clock, Archive, Copy, Plus, ChevronRight } from 'lucide-react';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -9,11 +11,16 @@ const T = {
 
 export default function Settings() {
   const { t } = useTranslation();
+  const { years, currentYear, setCurrentYear, refresh: refreshYears } = useAcademicYear();
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [message, setMessage] = useState('');
+  const [newYearName, setNewYearName] = useState('');
+  const [creatingYear, setCreatingYear] = useState(false);
+  const [closingYear, setClosingYear] = useState(null);
+  const [copyingYear, setCopyingYear] = useState(null);
 
   useEffect(() => {
     loadSettings();
@@ -50,29 +57,74 @@ export default function Settings() {
     }
   };
 
- const handleLogoUpload = async () => {
-  if (!logoFile) return;
-  const formData = new FormData();
-  formData.append('logo', logoFile);
-  try {
-    const token = localStorage.getItem('accessToken');
-    const response = await fetch('/api/settings/upload-logo', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
-    if (!response.ok) throw new Error(t('common.error'));
-    const res = await response.json();
-    setSettings({ ...settings, logoUrl: res.logoUrl });
-    setLogoFile(null);
-    setMessage(t('settings.saved'));
-    setTimeout(() => setMessage(''), 3000);
-  } catch (err) {
-    alert('Erreur upload : ' + err.message);
-  }
-};
+  const handleLogoUpload = async () => {
+    if (!logoFile) return;
+    const formData = new FormData();
+    formData.append('logo', logoFile);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/settings/upload-logo', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (!response.ok) throw new Error(t('common.error'));
+      const res = await response.json();
+      setSettings({ ...settings, logoUrl: res.logoUrl });
+      setLogoFile(null);
+      setMessage(t('settings.saved'));
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      alert('Erreur upload : ' + err.message);
+    }
+  };
+
+  const handleCreateYear = async () => {
+    if (!newYearName.trim()) return;
+    setCreatingYear(true);
+    try {
+      await fetchWithAuth('/api/academic-years', { method: 'POST', body: JSON.stringify({ name: newYearName.trim() }) });
+      setNewYearName('');
+      await refreshYears();
+      setMessage('Année scolaire créée');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) { alert(err.message); }
+    finally { setCreatingYear(false); }
+  };
+
+  const handleSetCurrent = async (yearId) => {
+    try {
+      await setCurrentYear(yearId);
+      setMessage('Année courante mise à jour');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleCloseYear = async (yearId) => {
+    if (!confirm('Clôturer cette année ? Les écritures seront bloquées.')) return;
+    setClosingYear(yearId);
+    try {
+      await fetchWithAuth(`/api/academic-years/${yearId}/close`, { method: 'POST' });
+      await refreshYears();
+      setMessage('Année clôturée');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) { alert(err.message); }
+    finally { setClosingYear(null); }
+  };
+
+  const handleCopyYear = async (yearId, name) => {
+    if (!confirm(`Copier les données vers l'année "${name}" ?`)) return;
+    setCopyingYear(yearId);
+    try {
+      const res = await fetchWithAuth(`/api/academic-years/${yearId}/copy`, { method: 'POST', body: JSON.stringify({ targetYearId: yearId }) });
+      await refreshYears();
+      setMessage(`Données copiées (${res?.copied || 0} inscriptions)`);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) { alert(err.message); }
+    finally { setCopyingYear(null); }
+  };
 
   if (loading) return <div style={{ color: T.text }}>{t('common.loading')}</div>;
 

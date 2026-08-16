@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Search } from 'lucide-react';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { useTranslation } from 'react-i18next';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c',
@@ -19,20 +20,21 @@ const T = {
 const emptyForm = {
   eleveId: '',
   classeId: '',
-  anneeScolaire: '2025-2026',
+  anneeScolaire: '',
   type: 'Ordinaire',
   reduction: 0,
 };
 
 export default function Inscriptions() {
   const { t } = useTranslation();
+  const { years, currentYear } = useAcademicYear();
   const [inscriptions, setInscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [eleves, setEleves] = useState([]);
   const [classes, setClasses] = useState([]);
   const [modal, setModal] = useState(null); // null | 'add' | { id }
-  const [form, setForm] = useState(emptyForm);
-  const [filterAnnee, setFilterAnnee] = useState('2025-2026');
+  const [form, setForm] = useState({ ...emptyForm, anneeScolaire: currentYear });
+  const [filterAnnee, setFilterAnnee] = useState(currentYear);
   const [searchEleve, setSearchEleve] = useState('');
 
   // Charger les listes nécessaires
@@ -162,9 +164,7 @@ export default function Inscriptions() {
             color: T.text, fontSize: 13, outline: 'none', cursor: 'pointer',
           }}
         >
-          <option>2024-2025</option>
-          <option>2025-2026</option>
-          <option>2026-2027</option>
+          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
         </select>
       </div>
 
@@ -299,9 +299,7 @@ export default function Inscriptions() {
                 onChange={handleChange}
                 style={{ width: '100%', background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', color: T.text }}
               >
-                <option>2024-2025</option>
-                <option>2025-2026</option>
-                <option>2026-2027</option>
+                {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
               </select>
             </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -9,8 +10,9 @@ const T = {
 
 export default function FraisScolaires() {
   const { t } = useTranslation();
+  const { years, currentYear } = useAcademicYear();
   const [classes, setClasses] = useState([]);
-  const [annee, setAnnee] = useState('2025-2026');
+  const [annee, setAnnee] = useState(currentYear);
   const [fraisList, setFraisList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -103,9 +105,7 @@ export default function FraisScolaires() {
           onChange={e => setAnnee(e.target.value)}
           style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 12px', color: T.text }}
         >
-          <option>2024-2025</option>
-          <option>2025-2026</option>
-          <option>2026-2027</option>
+          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
         </select>
       </div>
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { Plus, Edit2, Trash2, X, Check, Award, FileText, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -11,12 +12,13 @@ const T = {
 
 export default function Examens() {
   const { t } = useTranslation();
+  const { years, currentYear } = useAcademicYear();
   const [examens, setExamens] = useState([]);
   const [classes, setClasses] = useState([]);
   const [matieres, setMatieres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // 'addExamen' or { examenId, type: 'addSalle' } or { examenId, type: 'results' }
-  const [form, setForm] = useState({ nom: '', dateDebut: '', dateFin: '', classeId: '', anneeScolaire: '2025-2026' });
+  const [form, setForm] = useState({ nom: '', dateDebut: '', dateFin: '', classeId: '', anneeScolaire: currentYear });
   const [salleForm, setSalleForm] = useState({ nomSalle: '', capacite: '' });
   const [selectedExamen, setSelectedExamen] = useState(null);
   const [repartition, setRepartition] = useState([]);
@@ -50,14 +52,14 @@ export default function Examens() {
   const loadExamens = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth('/examens?anneeScolaire=2025-2026');
+      const data = await fetchWithAuth(`/examens?anneeScolaire=${currentYear}`);
       setExamens(data);
     } catch (err) { console.error(err); }
     setLoading(false);
   };
 
   const openAddExamen = () => {
-    setForm({ nom: '', dateDebut: '', dateFin: '', classeId: '', anneeScolaire: '2025-2026' });
+    setForm({ nom: '', dateDebut: '', dateFin: '', classeId: '', anneeScolaire: currentYear });
     setModal('addExamen');
   };
 

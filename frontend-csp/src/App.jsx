@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ParentProvider } from './context/ParentContext';
 import { EnseignantProvider } from './context/EnseignantContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { AcademicYearProvider } from './context/AcademicYearContext';
 import { useTranslation } from 'react-i18next';
 import Sidebar from './components/Sidebar';
 import OfflineBanner from './components/OfflineBanner';
@@ -195,7 +196,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <NotificationProvider>
+        <AcademicYearProvider>
+          <NotificationProvider>
           <OfflineBanner />
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -203,7 +205,8 @@ export default function App() {
             <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/*" element={<AppRoutes />} />
           </Routes>
-        </NotificationProvider>
+          </NotificationProvider>
+        </AcademicYearProvider>
       </AuthProvider>
     </BrowserRouter>
   );

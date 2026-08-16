@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { FileText, Download, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   bg: '#06101a', card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -41,12 +42,13 @@ const btn = (label, icon, onClick, color = T.accent) => (
 );
 
 export default function Rapports() {
+  const { years, currentYear } = useAcademicYear();
   const [assiduite, setAssiduite] = useState(null);
   const [paiements, setPaiements] = useState(null);
   const [classes, setClasses] = useState([]);
   const [classeId, setClasseId] = useState('');
   const [loading, setLoading] = useState(true);
-  const [annee, setAnnee] = useState('2025-2026');
+  const [annee, setAnnee] = useState(currentYear);
 
   const loadAll = async () => {
     setLoading(true);
@@ -90,8 +92,7 @@ export default function Rapports() {
           onChange={(e) => setAnnee(e.target.value)}
           style={{ background: T.card, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', fontSize: 13 }}
         >
-          <option value="2024-2025">2024-2025</option>
-          <option value="2025-2026">2025-2026</option>
+          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
         </select>
         <button onClick={loadAll} style={{
           display: 'flex', alignItems: 'center', gap: 6, background: 'transparent',

@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Users, DollarSign, TrendingUp, BookOpen, AlertTriangle, CheckCircle } from 'lucide-react';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { useTranslation } from 'react-i18next';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   bg: '#06101a', card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -28,9 +29,10 @@ function StatCard({ label, value, icon: Icon, color }) {
 
 export default function Statistiques() {
   const { t } = useTranslation();
+  const { years, currentYear } = useAcademicYear();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [annee, setAnnee] = useState('2025-2026');
+  const [annee, setAnnee] = useState(currentYear);
 
   useEffect(() => { load(); }, [annee]);
 
@@ -61,8 +63,7 @@ export default function Statistiques() {
         </div>
         <select value={annee} onChange={e => setAnnee(e.target.value)}
           style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 12px', color: T.text, fontSize: 12 }}>
-          <option value="2025-2026">2025-2026</option>
-          <option value="2024-2025">2024-2025</option>
+          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
         </select>
       </div>
 

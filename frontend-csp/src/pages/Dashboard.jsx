@@ -4,6 +4,7 @@ import { Users, DollarSign, GraduationCap, AlertCircle, Award, Search, Bell, Che
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { useTranslation } from 'react-i18next';
 import { useNotifications } from '../context/NotificationContext';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -37,6 +38,7 @@ export default function Dashboard() {
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const notifRef = useRef(null);
   const { notifications, unreadCount, loading: notifLoading, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { years, currentYear } = useAcademicYear();
   const [stats, setStats] = useState({
     nbEleves: 0,
     nbClasses: 0,
@@ -48,7 +50,7 @@ export default function Dashboard() {
     recentEleves: [],
     prochainsExamens: [],
   });
-  const [annee, setAnnee] = useState('2025-2026');
+  const [annee, setAnnee] = useState(currentYear);
   const [loading, setLoading] = useState(true);
 
   const loadDashboard = async () => {

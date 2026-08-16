@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, FileText, Award, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -10,8 +11,9 @@ const T = {
 
 export default function Bulletins() {
   const { t } = useTranslation();
+  const { years, currentYear } = useAcademicYear();
   const [searchTerm, setSearchTerm] = useState('');
-  const [annee, setAnnee] = useState('2025-2026');
+  const [annee, setAnnee] = useState(currentYear);
   const [semestre, setSemestre] = useState(1);
   const [eleve, setEleve] = useState(null);
   const [classes, setClasses] = useState([]);
@@ -131,7 +133,7 @@ export default function Bulletins() {
             <div>
               <label style={{ fontSize: 11, color: T.muted }}>{t('common.year')}</label>
               <select value={annee} onChange={e => setAnnee(e.target.value)} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px', color: T.text }}>
-                <option>2024-2025</option><option>2025-2026</option><option>2026-2027</option>
+                {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
               </select>
             </div>
             <button onClick={generateBulletin} disabled={!eleve} style={{ background: T.green, border: 'none', borderRadius: 8, padding: '8px 20px', color: '#fff', cursor: eleve ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 6 }}>

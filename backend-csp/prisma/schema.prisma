@@ -68,14 +68,15 @@ model School {
 
 // ==================== ANNÉES SCOLAIRES ====================
 model AcademicYear {
-  id        String   @id @default(uuid())
-  schoolId  String
-  name      String
-  isCurrent Boolean  @default(false)
-  startDate DateTime
-  endDate   DateTime
-  createdAt DateTime @default(now())
-  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  schoolId   String
+  name       String
+  isCurrent  Boolean  @default(false)
+  isArchived Boolean  @default(false)
+  startDate  DateTime
+  endDate    DateTime
+  createdAt  DateTime @default(now())
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
   @@unique([schoolId, name])
   @@map("academic_years")

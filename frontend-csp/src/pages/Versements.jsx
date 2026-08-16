@@ -3,6 +3,7 @@ import { Search, DollarSign, Printer, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { downloadExcel } from '../api/downloadExcel';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -12,8 +13,9 @@ const T = {
 
 export default function Versements() {
   const { t } = useTranslation();
+  const { years, currentYear } = useAcademicYear();
   const [searchTerm, setSearchTerm] = useState('');
-  const [anneeScolaire, setAnneeScolaire] = useState('2025-2026');
+  const [anneeScolaire, setAnneeScolaire] = useState(currentYear);
   const [eleve, setEleve] = useState(null);
   const [situation, setSituation] = useState(null);
   const [versements, setVersements] = useState([]);
@@ -157,9 +159,8 @@ return (
             onChange={(e) => setAnneeScolaire(e.target.value)}
             style={{ width: '100%', background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px', color: T.text }}
           >
-            <option>2024-2025</option>
-            <option>2025-2026</option>
-            <option>2026-2027</option>
+            {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
+            {years.length === 0 && <option>2025-2026</option>}
           </select>
         </div>
       </div>

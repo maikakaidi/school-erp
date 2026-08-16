@@ -42,6 +42,8 @@ import profRoutes from './modules/prof/prof.routes.js';
 import eleveRoutes from './modules/eleve/eleve.routes.js';
 import messagesRoutes from './modules/messages/messages.routes.js';
 import rapportsRoutes from './modules/rapports/rapports.routes.js';
+import academicYearsRoutes from './modules/academic-years/academicYears.routes.js';
+import exportRoutes from './modules/export/export.routes.js';
 
 const app = express();
 
@@ -140,6 +142,8 @@ app.use('/api/prof', profRoutes);
 app.use('/api/eleve', eleveRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/rapports', rapportsRoutes);
+app.use('/api/academic-years', academicYearsRoutes);
+app.use('/api/export', exportRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.status(200).json({ status: 'OK' }));

@@ -1,6 +1,10 @@
 import prisma from '../../config/database.js';
+import { isYearArchived } from '../academic-years/academicYears.service.js';
 
 export const upsertNote = async (schoolId, data) => {
+  if (await isYearArchived(schoolId, data.anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — modification impossible'), { status: 403 });
+  }
   const devoir = data.devoir || null;
   const comp = data.composition || null;
   let moyenne = null;

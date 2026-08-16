@@ -69,3 +69,18 @@ export const deleteSchool = async (req, res, next) => {
     res.status(200).json({ message: 'École supprimée définitivement' });
   } catch (error) { next(error); }
 };
+
+export const anonymizeSchool = async (req, res, next) => {
+  try {
+    const result = await saService.anonymizeSchoolData(req.params.id);
+    logAudit({ ...auditActorFromReq(req), action: 'school.anonymize', targetType: 'school', targetId: req.params.id });
+    res.status(200).json({ message: 'Données personnelles anonymisées', ...result });
+  } catch (error) { next(error); }
+};
+
+export const getStorageStats = async (req, res, next) => {
+  try {
+    const stats = await saService.getStorageStats();
+    res.json(stats);
+  } catch (error) { next(error); }
+};

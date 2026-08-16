@@ -8,6 +8,7 @@ import {
   Calculator, Table, TrendingUp, Building2, Globe, UserCheck2, CalendarX, Megaphone, CalendarDays, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useAcademicYear } from '../context/AcademicYearContext';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 
 const T = {
@@ -69,6 +70,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { currentYear } = useAcademicYear();
   const { t, i18n } = useTranslation();
   const [logoUrl, setLogoUrl] = useState(null);
 
@@ -146,7 +148,7 @@ export default function Sidebar() {
             background: T.accent + '15', border: `1px solid ${T.accent}30`,
             borderRadius: 7, padding: '5px 10px', fontSize: 11, color: T.accent,
           }}>
-            <Clock size={11} /> {t('common.year')} 2025-2026
+            <Clock size={11} /> {t('common.year')} {currentYear}
           </div>
         )}
         <div style={{ marginTop: 10, display: 'flex', gap: 4 }}>

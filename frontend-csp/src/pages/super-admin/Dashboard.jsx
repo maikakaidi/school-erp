@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Building2, Users, AlertTriangle, TrendingUp,
   CheckCircle, XCircle, RefreshCw, Trash2, Key,
-  Plus, Calendar, Search, ArrowLeft
+  Plus, Calendar, Search, ArrowLeft, Shield
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -94,11 +94,27 @@ export default function SuperAdminDashboard() {
   };
 
   const doDelete = async (id) => {
-    if (!confirm(t('superAdmin.confirmDelete'))) return;
+    setModal('confirmDelete');
+    setModalData({ schoolId: id, schoolName: schools.find(s => s.id === id)?.name || '', confirmText: '' });
+  };
+
+  const doAnonymize = async () => {
     setActionLoading(true);
     try {
-      await api(`/api/super-admin/delete/${id}`, { method: 'DELETE' });
+      await api(`/api/super-admin/anonymize/${modalData.schoolId}`, { method: 'POST' });
+      await api(`/api/super-admin/delete/${modalData.schoolId}`, { method: 'DELETE' });
       await loadData();
+      setModal(null);
+    } catch (e) { setError(e.message); }
+    setActionLoading(false);
+  };
+
+  const doConfirmDelete = async () => {
+    setActionLoading(true);
+    try {
+      await api(`/api/super-admin/delete/${modalData.schoolId}`, { method: 'DELETE' });
+      await loadData();
+      setModal(null);
     } catch (e) { setError(e.message); }
     setActionLoading(false);
   };
@@ -286,6 +302,43 @@ export default function SuperAdminDashboard() {
             style={{ width: '100%', background: T.accent, border: 'none', borderRadius: 8, padding: 10, color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
             {actionLoading ? t('superAdmin.progress') : t('superAdmin.resetAction')}
           </button>
+        </Modal>
+      )}
+
+      {modal === 'confirmDelete' && (
+        <Modal title="Suppression définitive" onClose={() => setModal(null)}>
+          <div style={{ background: T.red + '15', border: `1px solid ${T.red}40`, borderRadius: 8, padding: 14, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <AlertTriangle size={16} color={T.red} />
+              <strong style={{ color: T.red, fontSize: 13 }}>Attention : action irréversible</strong>
+            </div>
+            <p style={{ fontSize: 12, color: T.muted, lineHeight: 1.5 }}>
+              L'école <strong style={{ color: T.text }}>{modalData.schoolName}</strong> et toutes ses données (élèves, notes, versements, absences, messages) seront supprimées définitivement.
+            </p>
+          </div>
+
+          <div style={{ background: T.accent + '15', border: `1px solid ${T.accent}40`, borderRadius: 8, padding: 14, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <Shield size={16} color={T.accent} />
+              <strong style={{ color: T.accent, fontSize: 13 }}>Option RGPD</strong>
+            </div>
+            <p style={{ fontSize: 12, color: T.muted, lineHeight: 1.5 }}>
+              Vous pouvez d'abord anonymiser les données personnelles (noms, télélphones, emails) avant suppression, conformément au RGPD.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={doAnonymize}
+              disabled={actionLoading}
+              style={{ flex: 1, background: T.accent, border: 'none', borderRadius: 8, padding: 10, color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+              {actionLoading ? '...' : 'Anonymiser & Supprimer'}
+            </button>
+            <button onClick={doConfirmDelete}
+              disabled={actionLoading}
+              style={{ flex: 1, background: T.red, border: 'none', borderRadius: 8, padding: 10, color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+              {actionLoading ? '...' : 'Supprimer directement'}
+            </button>
+          </div>
         </Modal>
       )}
     </div>
