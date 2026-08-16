@@ -32,6 +32,10 @@ function clearSession() {
   window.dispatchEvent(new CustomEvent('auth:unauthorized'));
 }
 
+function isNetworkError(err) {
+  return !navigator.onLine || (err instanceof TypeError && /failed to fetch|network/i.test(err.message));
+}
+
 export async function fetchWithAuth(endpoint, options = {}) {
   const token = localStorage.getItem('accessToken');
   const headers = {
@@ -76,12 +80,12 @@ export async function fetchWithAuth(endpoint, options = {}) {
 
     return data;
   } catch (err) {
-    if (isGet && !navigator.onLine) {
+    if (isGet && isNetworkError(err)) {
       const cached = await getCachedApiResponse(endpoint).catch(() => null);
       if (cached) return cached.data;
     }
 
-    if (!isGet && !navigator.onLine) {
+    if (!isGet && isNetworkError(err)) {
       const clientId = `cid-${crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)}`;
       await addPendingAction({
         endpoint,
