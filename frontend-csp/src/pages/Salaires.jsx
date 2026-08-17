@@ -168,8 +168,8 @@ export default function Salaires() {
 
       {/* Modal avance */}
       {showAvanceModal && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 400 }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', zIndex: 200, overflow: 'auto', padding: 20 }}>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 400, margin: 'auto' }}>
             <h2 style={{ marginBottom: 16, color: T.text }}>{t('salaires.nouvelleAvanceTitle')}</h2>
             <select value={avanceForm.enseignantId} onChange={e => setAvanceForm({ ...avanceForm, enseignantId: e.target.value })} style={{ width: '100%', marginBottom: 12, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }}>
               <option value="">{t('salaires.selectEnseignant')}</option>

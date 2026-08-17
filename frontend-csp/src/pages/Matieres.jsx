@@ -95,8 +95,8 @@ export default function Matieres() {
 
       {/* Modal */}
       {modal && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 400 }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', zIndex: 200, overflow: 'auto', padding: 20 }}>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 400, margin: 'auto' }}>
             <h2 style={{ marginBottom: 16, color: T.text }}>{modal === 'add' ? t('matieres.newMatiere') : t('matieres.editMatiere')}</h2>
             <input name="libelle" value={form.libelle} onChange={handleChange} placeholder={t('matieres.libelle')} style={{ width: '100%', marginBottom: 12, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }} />
             <input name="code" value={form.code} onChange={handleChange} placeholder={t('matieres.code')} style={{ width: '100%', marginBottom: 12, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }} />

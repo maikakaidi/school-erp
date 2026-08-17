@@ -240,8 +240,8 @@ export default function Examens() {
 
       {/* Modal Ajout Examen */}
       {modal === 'addExamen' && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 500 }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', zIndex: 200, overflow: 'auto', padding: 20 }}>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 500, margin: 'auto' }}>
             <h2 style={{ marginBottom: 16, color: T.text }}>{t('examens.newExamen')}</h2>
             <input name="nom" value={form.nom} onChange={handleChange} placeholder={t('matieres.libelle')} style={{ width: '100%', marginBottom: 12, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }} />
             <input name="dateDebut" type="date" value={form.dateDebut} onChange={handleChange} style={{ width: '100%', marginBottom: 12, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }} />
@@ -260,8 +260,8 @@ export default function Examens() {
 
       {/* Modal Ajout Salle */}
       {modal && modal.type === 'addSalle' && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 400 }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', zIndex: 200, overflow: 'auto', padding: 20 }}>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 400, margin: 'auto' }}>
             <h2 style={{ marginBottom: 16, color: T.text }}>{t('examens.addSalle')}</h2>
             <input name="nomSalle" value={salleForm.nomSalle} onChange={handleSalleChange} placeholder={t('examens.salleNom')} style={{ width: '100%', marginBottom: 12, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }} />
             <input name="capacite" type="number" value={salleForm.capacite} onChange={handleSalleChange} placeholder={t('examens.capacite')} style={{ width: '100%', marginBottom: 20, padding: 8, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text }} />
@@ -275,8 +275,8 @@ export default function Examens() {
 
       {/* Modal Répartition */}
       {modal && modal.type === 'repartition' && repartition.length > 0 && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, overflow: 'auto', padding: 20 }}>
-          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 600, maxHeight: '80vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', zIndex: 200, overflow: 'auto', padding: 20 }}>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 600, maxHeight: 'none', margin: 'auto' }}>
             <h2 style={{ marginBottom: 16, color: T.text }}>{t('examens.repartitionSalles')}</h2>
             {repartition.map((r, i) => (
               <div key={i} style={{ marginBottom: 20, borderBottom: `1px solid ${T.border}`, paddingBottom: 10 }}>
@@ -291,8 +291,8 @@ export default function Examens() {
 
       {/* Modal Gestion des résultats */}
       {modal && modal.type === 'results' && selectedExamen && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, overflow: 'auto', padding: 20 }}>
-          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 700, maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: '#000000a0', display: 'flex', zIndex: 200, overflow: 'auto', padding: 20 }}>
+          <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24, width: 700, maxHeight: 'none', margin: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h2 style={{ color: T.text }}>{t('examens.resultsTitle')} - {selectedExamen.nom}</h2>
               <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted }}><X size={18} /></button>
