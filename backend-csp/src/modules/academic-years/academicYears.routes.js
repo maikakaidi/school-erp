@@ -13,5 +13,7 @@ router.post('/', controller.createYear);
 router.post('/set-current', controller.setCurrent);
 router.post('/close', controller.closeYear);
 router.post('/copy', controller.copyYearData);
+router.put('/:id', controller.updateYear);
+router.delete('/:id', controller.deleteYear);
 
 export default router;

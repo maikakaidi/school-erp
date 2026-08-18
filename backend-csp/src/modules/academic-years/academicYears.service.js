@@ -195,3 +195,41 @@ export const isYearArchived = async (schoolId, anneeScolaire) => {
   });
   return year?.isArchived || false;
 };
+
+export const updateYear = async (schoolId, yearId, { name }) => {
+  const year = await prisma.academicYear.findFirst({
+    where: { id: yearId, schoolId },
+  });
+  if (!year) throw Object.assign(new Error('Année scolaire introuvable'), { status: 404 });
+  if (year.isCurrent) throw Object.assign(new Error('Impossible de modifier l\'année courante'), { status: 400 });
+
+  if (name && name !== year.name) {
+    const existing = await prisma.academicYear.findUnique({
+      where: { schoolId_name: { schoolId, name } },
+    });
+    if (existing) throw Object.assign(new Error('Ce nom d\'année existe déjà'), { status: 409 });
+  }
+
+  return prisma.academicYear.update({
+    where: { id: yearId },
+    data: { name },
+  });
+};
+
+export const deleteYear = async (schoolId, yearId) => {
+  const year = await prisma.academicYear.findFirst({
+    where: { id: yearId, schoolId },
+  });
+  if (!year) throw Object.assign(new Error('Année scolaire introuvable'), { status: 404 });
+  if (year.isCurrent) throw Object.assign(new Error('Impossible de supprimer l\'année courante'), { status: 400 });
+
+  // Vérifier s'il y a des données liées
+  const hasClasses = await prisma.classe.count({ where: { schoolId, anneeScolaire: year.name } });
+  if (hasClasses > 0) {
+    throw Object.assign(new Error(`Impossible : ${hasClasses} classe(s) liée(s) à cette année. Supprimez-les d'abord.`), { status: 400 });
+  }
+
+  return prisma.academicYear.delete({
+    where: { id: yearId },
+  });
+};

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { useAcademicYear } from '../context/AcademicYearContext';
-import { Clock, Archive, Copy, Plus, ChevronRight } from 'lucide-react';
+import { Clock, Archive, Copy, Plus, ChevronRight, Edit2, Trash2, X, Check } from 'lucide-react';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -21,6 +21,9 @@ export default function Settings() {
   const [creatingYear, setCreatingYear] = useState(false);
   const [closingYear, setClosingYear] = useState(null);
   const [copyingYear, setCopyingYear] = useState(null);
+  const [editingYear, setEditingYear] = useState(null);
+  const [editYearName, setEditYearName] = useState('');
+  const [deletingYear, setDeletingYear] = useState(null);
 
   useEffect(() => {
     loadSettings();
@@ -106,7 +109,7 @@ export default function Settings() {
     if (!confirm('Clôturer cette année ? Les écritures seront bloquées.')) return;
     setClosingYear(yearId);
     try {
-      await fetchWithAuth(`/academic-years/${yearId}/close`, { method: 'POST' });
+      await fetchWithAuth('/academic-years/close', { method: 'POST', body: JSON.stringify({ yearId }) });
       await refreshYears();
       setMessage('Année clôturée');
       setTimeout(() => setMessage(''), 3000);
@@ -115,15 +118,39 @@ export default function Settings() {
   };
 
   const handleCopyYear = async (yearId, name) => {
-    if (!confirm(`Copier les données vers l'année "${name}" ?`)) return;
+    const targetName = prompt(`Nom de l'année cible pour copier depuis "${name}" :`, '');
+    if (!targetName || !targetName.trim()) return;
     setCopyingYear(yearId);
     try {
-      const res = await fetchWithAuth(`/academic-years/${yearId}/copy`, { method: 'POST', body: JSON.stringify({ targetYearId: yearId }) });
+      await fetchWithAuth('/academic-years/copy', { method: 'POST', body: JSON.stringify({ sourceYearId: yearId, targetYearName: targetName.trim() }) });
       await refreshYears();
-      setMessage(`Données copiées (${res?.copied || 0} inscriptions)`);
+      setMessage(`Données copiées vers "${targetName.trim()}"`);
       setTimeout(() => setMessage(''), 3000);
     } catch (err) { alert(err.message); }
     finally { setCopyingYear(null); }
+  };
+
+  const handleEditYear = async (yearId) => {
+    if (!editYearName.trim()) return;
+    try {
+      await fetchWithAuth(`/academic-years/${yearId}`, { method: 'PUT', body: JSON.stringify({ name: editYearName.trim() }) });
+      setEditingYear(null);
+      await refreshYears();
+      setMessage('Année modifiée');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleDeleteYear = async (yearId, name) => {
+    if (!confirm(`Supprimer l'année "${name}" ? Cette action est irréversible.`)) return;
+    setDeletingYear(yearId);
+    try {
+      await fetchWithAuth(`/academic-years/${yearId}`, { method: 'DELETE' });
+      await refreshYears();
+      setMessage('Année supprimée');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) { alert(err.message); }
+    finally { setDeletingYear(null); }
   };
 
   if (loading) return <div style={{ color: T.text }}>{t('common.loading')}</div>;
@@ -259,19 +286,37 @@ export default function Settings() {
                 border: `1px solid ${y.isCurrent ? T.accent : T.border}30`,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{y.name}</span>
-                  {y.isCurrent && (
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: T.green + '20', color: T.green, fontWeight: 700 }}>
-                      {t('settings.current', 'Courante')}
-                    </span>
-                  )}
-                  {y.isArchived && (
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: T.muted + '20', color: T.muted, fontWeight: 700 }}>
-                      {t('settings.archived', 'Archivée')}
-                    </span>
+                  {editingYear === y.id ? (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input value={editYearName} onChange={e => setEditYearName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleEditYear(y.id)} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 6, padding: '4px 8px', color: T.text, fontSize: 13, width: 120 }} autoFocus />
+                      <button onClick={() => handleEditYear(y.id)} style={{ padding: '2px 6px', borderRadius: 4, background: T.green, border: 'none', color: '#fff', cursor: 'pointer', fontSize: 11 }}><Check size={12} /></button>
+                      <button onClick={() => setEditingYear(null)} style={{ padding: '2px 6px', borderRadius: 4, background: 'transparent', border: `1px solid ${T.border}`, color: T.muted, cursor: 'pointer', fontSize: 11 }}><X size={12} /></button>
+                    </div>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{y.name}</span>
+                      {y.isCurrent && (
+                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: T.green + '20', color: T.green, fontWeight: 700 }}>
+                          {t('settings.current', 'Courante')}
+                        </span>
+                      )}
+                      {y.isArchived && (
+                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: T.muted + '20', color: T.muted, fontWeight: 700 }}>
+                          {t('settings.archived', 'Archivée')}
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
+                  {editingYear !== y.id && (
+                    <button onClick={() => { setEditingYear(y.id); setEditYearName(y.name); }} title="Modifier" style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      background: T.muted + '15', border: `1px solid ${T.muted}30`, color: T.muted, cursor: 'pointer',
+                    }}>
+                      <Edit2 size={12} style={{ verticalAlign: 'middle' }} />
+                    </button>
+                  )}
                   {!y.isCurrent && !y.isArchived && (
                     <button onClick={() => handleSetCurrent(y.id)} title="Définir courante" style={{
                       padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
@@ -294,6 +339,14 @@ export default function Settings() {
                       background: T.blue + '15', border: `1px solid ${T.blue}30`, color: T.blue, cursor: 'pointer',
                     }}>
                       <Copy size={12} style={{ verticalAlign: 'middle' }} /> {copyingYear === y.id ? '...' : t('settings.copy', 'Copier')}
+                    </button>
+                  )}
+                  {!y.isCurrent && (
+                    <button onClick={() => handleDeleteYear(y.id, y.name)} disabled={deletingYear === y.id} title="Supprimer" style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      background: '#b8383815', border: '1px solid #b8383830', color: '#b83838', cursor: 'pointer',
+                    }}>
+                      <Trash2 size={12} style={{ verticalAlign: 'middle' }} /> {deletingYear === y.id ? '...' : ''}
                     </button>
                   )}
                 </div>

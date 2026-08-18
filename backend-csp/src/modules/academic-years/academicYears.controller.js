@@ -43,3 +43,17 @@ export const copyYearData = async (req, res, next) => {
     res.json({ message: `Données copiées de ${result.sourceYear} vers ${result.targetYear}`, result });
   } catch (error) { next(error); }
 };
+
+export const updateYear = async (req, res, next) => {
+  try {
+    const year = await academicYearService.updateYear(req.user.schoolId, req.params.id, req.body);
+    res.json(year);
+  } catch (error) { next(error); }
+};
+
+export const deleteYear = async (req, res, next) => {
+  try {
+    await academicYearService.deleteYear(req.user.schoolId, req.params.id);
+    res.json({ message: 'Année supprimée' });
+  } catch (error) { next(error); }
+};

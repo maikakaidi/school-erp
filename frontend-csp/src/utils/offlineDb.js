@@ -102,6 +102,33 @@ export async function clearPendingAction(id) {
   return deleteFromStore(STORES.pendingActions, id);
 }
 
+export async function incrementRetry(id) {
+  const db = await openDB();
+  const tx = db.transaction(STORES.pendingActions, 'readwrite');
+  const store = tx.objectStore(STORES.pendingActions);
+  const req = store.get(id);
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => {
+      const record = req.result;
+      if (record) {
+        record.retries = (record.retries || 0) + 1;
+        store.put(record);
+      }
+      tx.oncomplete = () => { db.close(); resolve(record); };
+    };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
+export async function clearStaleActions(maxRetries = 5) {
+  const actions = await getPendingActions();
+  const stale = actions.filter(a => (a.retries || 0) >= maxRetries);
+  for (const a of stale) {
+    await clearPendingAction(a.id);
+  }
+  return stale.length;
+}
+
 export async function cacheApiResponse(key, data) {
   return saveToStore(STORES.settings, { id: key, data, cachedAt: Date.now() });
 }

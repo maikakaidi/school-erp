@@ -1,7 +1,8 @@
-import { getPendingActions, clearPendingAction } from '../utils/offlineDb';
+import { getPendingActions, clearPendingAction, incrementRetry, clearStaleActions } from '../utils/offlineDb';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const RETRY_INTERVAL = 60_000;
+const MAX_RETRIES = 5;
 
 let refreshPromise = null;
 
@@ -41,11 +42,17 @@ export async function syncPendingActions() {
   const actions = await getPendingActions();
   if (!actions || actions.length === 0) return { synced: 0, failed: 0, total: 0 };
 
+  // Nettoyer les actions trop anciennes (avant de commencer)
+  await clearStaleActions(MAX_RETRIES).catch(() => {});
+
   let token = localStorage.getItem('accessToken');
   let synced = 0;
   let failed = 0;
+  let tokenRefreshFailed = false;
 
   for (const action of actions) {
+    if (tokenRefreshFailed) { failed++; continue; }
+
     try {
       let res = await doSyncFetch(action.endpoint, action.method, action.body, action.clientId, token);
 
@@ -55,6 +62,7 @@ export async function syncPendingActions() {
           token = await refreshAccessToken();
           res = await doSyncFetch(action.endpoint, action.method, action.body, action.clientId, token);
         } catch {
+          tokenRefreshFailed = true;
           failed++;
           continue;
         }
@@ -64,9 +72,11 @@ export async function syncPendingActions() {
         await clearPendingAction(action.id);
         synced++;
       } else {
+        await incrementRetry(action.id);
         failed++;
       }
     } catch {
+      await incrementRetry(action.id);
       failed++;
     }
   }
@@ -82,7 +92,7 @@ async function runSync() {
   syncInProgress = true;
   try {
     const result = await syncPendingActions();
-    if (result && result.total > 0) {
+    if (result && result.total > 0 && (result.synced > 0 || result.failed > 0)) {
       window.dispatchEvent(new CustomEvent('sync-complete', { detail: result }));
     }
   } catch (err) {

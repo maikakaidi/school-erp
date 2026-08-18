@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { WifiOff, Wifi, CheckCircle, Clock } from 'lucide-react';
 import { getPendingActions } from '../utils/offlineDb';
 
@@ -6,6 +6,7 @@ export default function OfflineBanner() {
   const [offline, setOffline] = useState(!navigator.onLine);
   const [syncResult, setSyncResult] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const dismissTimer = useRef(null);
 
   const refreshCount = async () => {
     try {
@@ -18,7 +19,12 @@ export default function OfflineBanner() {
     refreshCount();
     const onOnline = () => { setOffline(false); setSyncResult(null); refreshCount(); };
     const onOffline = () => { setOffline(true); setSyncResult(null); };
-    const onSync = (e) => { setSyncResult(e.detail); refreshCount(); };
+    const onSync = (e) => {
+      setSyncResult(e.detail);
+      refreshCount();
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
+      dismissTimer.current = setTimeout(() => setSyncResult(null), 5000);
+    };
 
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
@@ -29,6 +35,7 @@ export default function OfflineBanner() {
       window.removeEventListener('offline', onOffline);
       window.removeEventListener('sync-complete', onSync);
       clearInterval(interval);
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
     };
   }, []);
 
