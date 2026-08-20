@@ -13,8 +13,9 @@ const parseQuery = (schema, query) => {
 
 export const getAll = async (req, res, next) => {
   try {
-    const { dateDebut, dateFin, classeId, eleveId, type, search, page, limit } = req.query;
+    const { anneeScolaire, dateDebut, dateFin, classeId, eleveId, type, search, page, limit } = req.query;
     const data = await absenceService.getAllAbsences(req.user.schoolId, {
+      anneeScolaire,
       dateDebut,
       dateFin,
       classeId,
@@ -70,8 +71,8 @@ export const remove = async (req, res, next) => {
 
 export const exportExcel = async (req, res, next) => {
   try {
-    const { dateDebut, dateFin, classeId, type } = req.query;
-    const rows = await absenceService.exportAbsences(req.user.schoolId, { dateDebut, dateFin, classeId, type });
+    const { anneeScolaire, dateDebut, dateFin, classeId, type } = req.query;
+    const rows = await absenceService.exportAbsences(req.user.schoolId, { anneeScolaire, dateDebut, dateFin, classeId, type });
     sendExcel(res, rows, 'absences.xlsx');
   } catch (error) { next(error); }
 };

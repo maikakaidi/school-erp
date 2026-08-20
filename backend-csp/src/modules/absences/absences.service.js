@@ -1,5 +1,6 @@
 import prisma from '../../config/database.js';
 import { createNotification, createNotificationsMany } from '../notifications/notifications.service.js';
+import { resolveAcademicYear } from '../academic-years/academicYears.service.js';
 
 const toMidday = (dateStr) => new Date(`${dateStr}T12:00:00.000Z`);
 
@@ -19,6 +20,7 @@ const getLatestClasseId = async (schoolId, eleveId) => {
 
 const getStatsRow = async (schoolId, filters) => {
   const where = { schoolId };
+  if (filters.anneeScolaire) where.anneeScolaire = filters.anneeScolaire;
   if (filters.classeId) where.classeId = filters.classeId;
   if (filters.matiereId) where.matiereId = filters.matiereId;
   if (filters.dateDebut) where.date = { ...(where.date || {}), gte: toMidday(filters.dateDebut) };
@@ -57,8 +59,9 @@ const getStatsRow = async (schoolId, filters) => {
   };
 };
 
-export const getAllAbsences = async (schoolId, { dateDebut, dateFin, classeId, eleveId, type, search, page = 1, limit = 20 } = {}) => {
+export const getAllAbsences = async (schoolId, { anneeScolaire, dateDebut, dateFin, classeId, eleveId, type, search, page = 1, limit = 20 } = {}) => {
   const where = { schoolId };
+  if (anneeScolaire) where.anneeScolaire = anneeScolaire;
   if (classeId) where.classeId = classeId;
   if (eleveId) where.eleveId = eleveId;
   if (type && type !== 'tous') where.type = type;
@@ -88,7 +91,7 @@ export const getAllAbsences = async (schoolId, { dateDebut, dateFin, classeId, e
     total,
     page,
     totalPages: Math.ceil(total / limit),
-    stats: await getStatsRow(schoolId, { classeId, eleveId, dateDebut, dateFin, matiereId: undefined }),
+    stats: await getStatsRow(schoolId, { anneeScolaire, classeId, eleveId, dateDebut, dateFin, matiereId: undefined }),
   };
 };
 
@@ -127,12 +130,15 @@ export const createAbsence = async (schoolId, data) => {
   const classeId = data.classeId || (await getLatestClasseId(schoolId, data.eleveId));
   if (!classeId) throw new Error("Aucune classe trouvée pour cet élève (inscription requise)");
 
+  const anneeScolaire = await resolveAcademicYear(schoolId, data.anneeScolaire || null, data.date);
+
   const absence = await prisma.absence.create({
     data: {
       schoolId,
       eleveId: data.eleveId,
       classeId,
       matiereId: data.matiereId || null,
+      anneeScolaire,
       date: toMidday(data.date),
       type: data.type,
       motif: data.motif || null,
@@ -169,12 +175,15 @@ export const bulkCreateAbsences = async (schoolId, data) => {
   const classe = await prisma.classe.findFirst({ where: { id: data.classeId, schoolId } });
   if (!classe) throw new Error('Classe non trouvée');
 
+  const anneeScolaire = await resolveAcademicYear(schoolId, data.anneeScolaire || null, data.date);
+
   const result = await prisma.absence.createMany({
     data: data.eleveIds.map((eleveId) => ({
       schoolId,
       eleveId,
       classeId: data.classeId,
       matiereId: data.matiereId || null,
+      anneeScolaire,
       date: toMidday(data.date),
       type: data.type,
       motif: data.motif || null,
@@ -246,6 +255,7 @@ export const deleteAbsence = async (schoolId, id) => {
 
 export const exportAbsences = async (schoolId, filters) => {
   const where = { schoolId };
+  if (filters.anneeScolaire) where.anneeScolaire = filters.anneeScolaire;
   if (filters.classeId) where.classeId = filters.classeId;
   if (filters.type && filters.type !== 'tous') where.type = filters.type;
   if (filters.dateDebut) where.date = { ...(where.date || {}), gte: toMidday(filters.dateDebut) };

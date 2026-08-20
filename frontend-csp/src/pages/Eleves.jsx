@@ -28,7 +28,8 @@ const emptyForm = {
   nomParent: '',
   adresseParent: '',
   telParent: '',
-  classeId: '',   // ← AJOUT
+  classeId: '',
+  langueChoisie: '',
   password: '',
 };
 
@@ -39,6 +40,7 @@ export default function Eleves() {
   const [search, setSearch] = useState('');
   const [classeFilter, setClasseFilter] = useState('Toutes');
   const [classes, setClasses] = useState([]);
+  const [groupes, setGroupes] = useState([]);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [page, setPage] = useState(1);
@@ -55,7 +57,14 @@ export default function Eleves() {
         console.error('Erreur chargement classes', err);
       }
     };
+    const loadGroupes = async () => {
+      try {
+        const data = await fetchWithAuth('/matieres/groupes/all');
+        setGroupes(data || []);
+      } catch (err) { console.error(err); }
+    };
     loadClasses();
+    loadGroupes();
   }, []);
 
   const loadEleves = async () => {
@@ -92,8 +101,8 @@ export default function Eleves() {
   };
 
   const openEdit = (eleve) => {
-    // Récupérer la classeId depuis la première inscription (si existante)
     const classeId = eleve.inscriptions?.[0]?.classeId || '';
+    const langueChoisie = eleve.inscriptions?.[0]?.langueChoisie || '';
     setForm({
       id: eleve.id,
       nom: eleve.nom,
@@ -107,6 +116,7 @@ export default function Eleves() {
       adresseParent: eleve.adresseParent || '',
       telParent: eleve.telParent || '',
       classeId,
+      langueChoisie,
       password: '',
     });
     setModal({ id: eleve.id });
@@ -134,7 +144,8 @@ export default function Eleves() {
         nomParent: form.nomParent,
         adresseParent: form.adresseParent,
         telParent: form.telParent,
-        classeId: form.classeId || undefined, // ← envoyer la classe
+        classeId: form.classeId || undefined,
+        langueChoisie: form.langueChoisie || undefined,
         password: form.password || undefined,
       };
 
@@ -323,7 +334,7 @@ export default function Eleves() {
               <div><label style={{ fontSize: 11, color: T.muted }}>{t('eleves.telParent')}</label><input name="telParent" value={form.telParent} onChange={handleInputChange} style={{ width: '100%', background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', color: T.text }} /></div>
             </div>
 
-            {/* Classe (nouveau champ) */}
+            {/* Classe */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ fontSize: 11, color: T.muted }}>{t('eleves.classe')}</label>
               <select
@@ -339,6 +350,45 @@ export default function Eleves() {
                 ))}
               </select>
             </div>
+
+            {/* Choix de langue (si la classe a un groupe de choix) */}
+            {(() => {
+              const hasChoiceGroup = groupes.some(g =>
+                g.matieres?.some(m => m.groupeId === g.id)
+              );
+              if (!hasChoiceGroup || !form.classeId) return null;
+              const options = [];
+              for (const g of groupes) {
+                if (g.matieres) {
+                  for (const m of g.matieres) {
+                    if (m.groupeId === g.id && !options.includes(m.libelle)) {
+                      options.push(m.libelle);
+                    }
+                  }
+                }
+              }
+              if (options.length === 0) return null;
+              return (
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ fontSize: 11, color: T.muted, display: 'block', marginBottom: 8 }}>Choix de langue</label>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    {options.map(opt => (
+                      <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.text, fontSize: 13, cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="langueChoisie"
+                          value={opt}
+                          checked={form.langueChoisie === opt}
+                          onChange={handleInputChange}
+                          style={{ accentColor: T.accent }}
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Accès espace élève */}
             <div style={{ marginBottom: 20 }}>

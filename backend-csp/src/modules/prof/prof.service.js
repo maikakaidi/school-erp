@@ -57,7 +57,7 @@ export const getAffectations = async (schoolId, enseignantId, anneeScolaire) => 
       id: a.id,
       classe: a.classe,
       matiere: a.matiere,
-      coefficient: coeffMap.get(`${a.classe.id}:${a.matiere.id}`) || 1,
+      coefficient: coeffMap.get(`${a.classe.id}:${a.matiere.id}`) || null,
     })),
   };
 };
@@ -152,7 +152,7 @@ export const getNotes = async (schoolId, enseignantId, { classeId, matiereId, se
   return {
     anneeScolaire: annee,
     semestre: sem,
-    coefficient: coefficient?.coefficient || 1,
+    coefficient: coefficient?.coefficient || null,
     totalEleves: rows.length,
     notesSaisies: saisies,
     notes: rows,
@@ -187,7 +187,7 @@ export const saveNotes = async (schoolId, enseignantId, data) => {
   return { saved: saved.length };
 };
 
-export const getAbsences = async (schoolId, enseignantId, { classeId, dateDebut, dateFin, type, page = 1, limit = 20 } = {}) => {
+export const getAbsences = async (schoolId, enseignantId, { classeId, anneeScolaire, dateDebut, dateFin, type, page = 1, limit = 20 } = {}) => {
   const mine = await prisma.affectation.findMany({
     where: { schoolId, enseignantId, isActive: true },
     select: { classeId: true },
@@ -198,6 +198,7 @@ export const getAbsences = async (schoolId, enseignantId, { classeId, dateDebut,
   if (classeId) {
     if (!classeIds.includes(classeId)) throw notFound('Vous n\'enseignez pas dans cette classe');
     const where = { schoolId, classeId };
+    if (anneeScolaire) where.anneeScolaire = anneeScolaire;
     if (type && type !== 'tous') where.type = type;
     if (dateDebut) where.date = { ...(where.date || {}), gte: new Date(`${dateDebut}T12:00:00.000Z`) };
     if (dateFin) where.date = { ...(where.date || {}), lte: new Date(`${dateFin}T23:59:59.999Z`) };
@@ -218,6 +219,7 @@ export const getAbsences = async (schoolId, enseignantId, { classeId, dateDebut,
   }
 
   const where = { schoolId, classeId: { in: classeIds } };
+  if (anneeScolaire) where.anneeScolaire = anneeScolaire;
   if (type && type !== 'tous') where.type = type;
   if (dateDebut) where.date = { ...(where.date || {}), gte: new Date(`${dateDebut}T12:00:00.000Z`) };
   if (dateFin) where.date = { ...(where.date || {}), lte: new Date(`${dateFin}T23:59:59.999Z`) };
@@ -336,7 +338,7 @@ export const getDashboard = async (schoolId, enseignantId) => {
   });
 
   const recentAbsences = await prisma.absence.findMany({
-    where: { schoolId, classeId: { in: classeIds }, type: 'absence' },
+    where: { schoolId, classeId: { in: classeIds }, type: 'absence', ...(annee ? { anneeScolaire: annee.name } : {}) },
     orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     take: 5,
     include: {

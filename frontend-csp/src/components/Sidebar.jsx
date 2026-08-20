@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   Home, Users, UserCheck, BookOpen, FileText,
   Award, DollarSign, CreditCard, Briefcase,
-  BarChart2, Settings, Shield, LogOut, ChevronRight, Clock,
+  BarChart2, Settings, Shield, LogOut, ChevronRight,
   Calculator, Table, TrendingUp, Building2, Globe, UserCheck2, CalendarX, Megaphone, CalendarDays, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +25,7 @@ const NAV_SCHOOL = [
     { key: 'parents',      label: 'Parents',         icon: UserCheck2, path: '/parents' },
     { key: 'inscriptions', label: 'Inscriptions',    icon: UserCheck, path: '/inscriptions' },
     { key: 'matieres',     label: 'Matières',        icon: BookOpen, path: '/matieres' },
+    { key: 'matieres-config', label: 'Config Matières', icon: Settings, path: '/matieres-config' },
     { key: 'coefficients', label: 'Coefficients',    icon: Calculator, path: '/coefficients' },
     { key: 'notes',        label: 'Notes & Devoirs', icon: Table, path: '/notes' },
     { key: 'absences',     label: 'Absences',        icon: CalendarX, path: '/absences' },
@@ -70,7 +71,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { currentYear } = useAcademicYear();
+  const { years, currentYear, setCurrentYear } = useAcademicYear();
   const { t, i18n } = useTranslation();
   const [logoUrl, setLogoUrl] = useState(null);
 
@@ -143,13 +144,29 @@ export default function Sidebar() {
           </div>
         </div>
         {!isSuperAdmin && (
-          <div style={{
-            marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 5,
-            background: T.accent + '15', border: `1px solid ${T.accent}30`,
-            borderRadius: 7, padding: '5px 10px', fontSize: 11, color: T.accent,
-          }}>
-            <Clock size={11} /> {t('common.year')} {currentYear}
-          </div>
+          <select
+            value={currentYear || ''}
+            onChange={async (e) => {
+              const yr = years.find(y => y.name === e.target.value);
+              if (yr) await setCurrentYear(yr.id);
+            }}
+            style={{
+              marginTop: 12, width: '100%',
+              background: T.accent + '15', border: `1px solid ${T.accent}30`,
+              borderRadius: 7, padding: '6px 10px', fontSize: 11, color: T.accent,
+              cursor: 'pointer', outline: 'none',
+              fontFamily: 'inherit',
+            }}
+          >
+            {years.length === 0 && !currentYear && (
+              <option value="">Aucune année</option>
+            )}
+            {years.map(y => (
+              <option key={y.id} value={y.name} style={{ background: T.sidebar, color: T.text }}>
+                {y.name} {y.isCurrent ? '✓' : ''}
+              </option>
+            ))}
+          </select>
         )}
         <div style={{ marginTop: 10, display: 'flex', gap: 4 }}>
           {[{ code: 'fr', label: 'FR' }, { code: 'en', label: 'EN' }, { code: 'ar', label: 'AR' }].map(l => (

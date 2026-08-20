@@ -33,7 +33,8 @@ export const getEmploiDuTemps = async (req, res, next) => {
 
 export const getAbsences = async (req, res, next) => {
   try {
-    const data = await eleveService.getAbsences(req.user.schoolId, req.user.eleveId);
+    const { anneeScolaire } = req.query;
+    const data = await eleveService.getAbsences(req.user.schoolId, req.user.eleveId, anneeScolaire);
     res.json(data);
   } catch (error) { next(error); }
 };

@@ -2,6 +2,7 @@ import prisma from '../../config/database.js';
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import { createNotification } from '../notifications/notifications.service.js';
+import { resolveAcademicYear } from '../academic-years/academicYears.service.js';
 
 const generateMatricule = () =>
   `CSP${randomBytes(4).toString('hex').toUpperCase()}`;
@@ -15,8 +16,9 @@ export const getAllEleves = async (
   limit = 20,
   search = '',
   classeId = null,
-  anneeScolaire = '2025-2026'
+  anneeScolaire = null
 ) => {
+  anneeScolaire = await resolveAcademicYear(schoolId, anneeScolaire);
 
   const where = {
     schoolId,
@@ -111,8 +113,9 @@ export const getAllEleves = async (
 export const getEleveById = async (
   id,
   schoolId,
-  anneeScolaire = '2025-2026'
+  anneeScolaire = null
 ) => {
+  anneeScolaire = await resolveAcademicYear(schoolId, anneeScolaire);
 
   const eleve = await prisma.eleve.findFirst({
 
@@ -160,8 +163,12 @@ export const createEleve = async (schoolId, data) => {
   const {
     classeId,
     password,
+    langueChoisie,
+    anneeScolaire: anneeInput,
     ...cleanData
   } = data;
+
+  const anneeScolaire = await resolveAcademicYear(schoolId, anneeInput);
 
   // Créer élève
   const eleve = await prisma.eleve.create({
@@ -184,11 +191,12 @@ export const createEleve = async (schoolId, data) => {
         eleveId: eleve.id,
         classeId,
 
-        anneeScolaire: '2025-2026',
+        anneeScolaire,
 
         type: 'Ordinaire',
 
         reduction: 0,
+        langueChoisie: langueChoisie || null,
 
         dateInscription: new Date(),
       },
@@ -217,8 +225,12 @@ export const updateEleve = async (
   const {
     classeId,
     password,
+    langueChoisie,
+    anneeScolaire: anneeInput,
     ...cleanData
   } = data;
+
+  const anneeScolaire = await resolveAcademicYear(schoolId, anneeInput);
 
   // Mettre à jour élève (scopé par école)
   const updated = await prisma.eleve.updateMany({
@@ -242,7 +254,7 @@ export const updateEleve = async (
         where: {
           schoolId,
           eleveId: id,
-          anneeScolaire: '2025-2026',
+          anneeScolaire,
         },
       });
 
@@ -257,6 +269,7 @@ export const updateEleve = async (
 
         data: {
           classeId,
+          ...(langueChoisie !== undefined ? { langueChoisie: langueChoisie || null } : {}),
         },
       });
 
@@ -270,11 +283,12 @@ export const updateEleve = async (
           eleveId: id,
           classeId,
 
-          anneeScolaire: '2025-2026',
+          anneeScolaire,
 
           type: 'Ordinaire',
 
           reduction: 0,
+          langueChoisie: langueChoisie || null,
 
           dateInscription: new Date(),
         },
@@ -308,7 +322,8 @@ export const deleteEleve = async (
   });
 };
 
-export const exportEleves = async (schoolId, anneeScolaire = '2025-2026') => {
+export const exportEleves = async (schoolId, anneeScolaire = null) => {
+  anneeScolaire = await resolveAcademicYear(schoolId, anneeScolaire);
   const eleves = await prisma.eleve.findMany({
     where: { schoolId, isActive: true },
     include: {

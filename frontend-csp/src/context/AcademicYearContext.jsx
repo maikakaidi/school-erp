@@ -6,8 +6,7 @@ const AcademicYearContext = createContext();
 export function AcademicYearProvider({ children }) {
   const [years, setYears] = useState([]);
   const [currentYear, setCurrentYearState] = useState(() => {
-    const saved = localStorage.getItem('currentYearName');
-    return saved || '2025-2026';
+    return localStorage.getItem('currentYearName') || null;
   });
   const [loading, setLoading] = useState(true);
 
@@ -19,9 +18,15 @@ export function AcademicYearProvider({ children }) {
       if (current) {
         setCurrentYearState(current.name);
         localStorage.setItem('currentYearName', current.name);
+      } else if (data?.length > 0) {
+        setCurrentYearState(data[0].name);
+        localStorage.setItem('currentYearName', data[0].name);
+      } else {
+        setCurrentYearState(null);
+        localStorage.removeItem('currentYearName');
       }
     } catch {
-      // En cas d'erreur, garde la valeur par défaut
+      // keep saved value from localStorage
     } finally {
       setLoading(false);
     }

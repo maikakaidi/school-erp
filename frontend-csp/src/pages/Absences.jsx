@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import PendingBadge from '../components/PendingBadge';
 import { downloadExcel } from '../api/downloadExcel';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c',
@@ -41,6 +42,7 @@ const bulkEmpty = {
 
 export default function Absences() {
   const { t } = useTranslation();
+  const { currentYear } = useAcademicYear();
   const [absences, setAbsences] = useState([]);
   const [stats, setStats] = useState({ totalAbsences: 0, totalRetards: 0, justifies: 0, enAttente: 0 });
   const [classes, setClasses] = useState([]);
@@ -81,6 +83,7 @@ export default function Absences() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page, limit: 15 });
+      if (currentYear?.name) params.set('anneeScolaire', currentYear.name);
       if (search) params.set('search', search);
       if (classeFilter) params.set('classeId', classeFilter);
       if (typeFilter && typeFilter !== 'tous') params.set('type', typeFilter);
@@ -104,13 +107,13 @@ export default function Absences() {
 
   useEffect(() => {
     loadAbsences();
-  }, [page, search, classeFilter, typeFilter, dateDebut, dateFin]);
+  }, [page, search, classeFilter, typeFilter, dateDebut, dateFin, currentYear]);
 
   useEffect(() => {
     const handler = () => loadAbsences();
     window.addEventListener('sync-complete', handler);
     return () => window.removeEventListener('sync-complete', handler);
-  }, [page, search, classeFilter, typeFilter, dateDebut, dateFin]);
+  }, [page, search, classeFilter, typeFilter, dateDebut, dateFin, currentYear]);
 
   const classeEleves = useMemo(
     () => (form.classeId ? eleves.filter((e) => e.classe?.id === form.classeId || e.inscriptions?.[0]?.classeId === form.classeId) : eleves),
@@ -270,7 +273,7 @@ export default function Absences() {
           <p style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{t('absences.subtitle', { count: total })}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={() => downloadExcel('/absences/export', 'absences.xlsx')} style={{
+          <button onClick={() => downloadExcel(`/absences/export${currentYear?.name ? `?anneeScolaire=${currentYear.name}` : ''}`, 'absences.xlsx')} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px',
             background: T.card, border: `1px solid ${T.border}`, borderRadius: 10,
             color: T.muted, cursor: 'pointer', fontSize: 12,

@@ -1,4 +1,5 @@
 import * as classeService from './classes.service.js';
+import { resolveAcademicYear } from '../academic-years/academicYears.service.js';
 import { z } from 'zod';
 
 const createSchema = z.object({
@@ -13,8 +14,7 @@ const createSchema = z.object({
 
   anneeScolaire: z
     .string()
-    .optional()
-    .default('2025-2026'),
+    .optional(),
 });
 
 const updateSchema = createSchema.partial();
@@ -72,6 +72,10 @@ export const create = async (req, res, next) => {
   try {
 
     const validated = createSchema.parse(req.body);
+
+    if (!validated.anneeScolaire) {
+      validated.anneeScolaire = await resolveAcademicYear(req.user.schoolId, null);
+    }
 
     const classe = await classeService.createClasse(
       req.user.schoolId,

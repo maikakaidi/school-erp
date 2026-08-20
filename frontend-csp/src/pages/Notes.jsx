@@ -19,7 +19,6 @@ export default function Notes() {
   const [classeId, setClasseId] = useState('');
   const [matiereId, setMatiereId] = useState('');
   const [semestre, setSemestre] = useState(1);
-  const [anneeScolaire, setAnneeScolaire] = useState(currentYear);
   const [eleves, setEleves] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -39,7 +38,7 @@ export default function Notes() {
     if (!classeId || !matiereId) return;
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/notes/classe?classeId=${classeId}&matiereId=${matiereId}&semestre=${semestre}&anneeScolaire=${anneeScolaire}`);
+      const data = await fetchWithAuth(`/notes/classe?classeId=${classeId}&matiereId=${matiereId}&semestre=${semestre}&currentYear=${currentYear}`);
       setEleves(data);
     } catch (err) {
       console.error(err);
@@ -52,7 +51,7 @@ export default function Notes() {
   useEffect(() => {
     if (classeId && matiereId) loadEleves();
     else setEleves([]);
-  }, [classeId, matiereId, semestre, anneeScolaire]);
+  }, [classeId, matiereId, semestre, currentYear]);
 
   const handleNoteChange = (eleveId, field, value) => {
     setEleves(prev => prev.map(e => {
@@ -77,7 +76,7 @@ export default function Notes() {
           matiereId,
           classeId,
           semestre,
-          anneeScolaire,
+          currentYear,
           devoir: devoir ? parseFloat(devoir) : null,
           composition: composition ? parseFloat(composition) : null,
           appreciation: appreciation || '',
@@ -108,13 +107,13 @@ export default function Notes() {
           <p style={{ color: T.muted }}>{t('notes.subtitle')}</p>
         </div>
         {classeId && (
-          <button onClick={() => downloadExcel(`/notes/export?classeId=${classeId}&semestre=${semestre}&anneeScolaire=${anneeScolaire}`, 'notes.xlsx')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 14px', color: T.muted, cursor: 'pointer', fontSize: 12 }}>
+          <button onClick={() => downloadExcel(`/notes/export?classeId=${classeId}&semestre=${semestre}&currentYear=${currentYear}`, 'notes.xlsx')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 14px', color: T.muted, cursor: 'pointer', fontSize: 12 }}>
             <Download size={14} /> Excel
           </button>
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 24, background: T.card, padding: 20, borderRadius: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24, background: T.card, padding: 20, borderRadius: 14 }}>
         <div>
           <label style={{ fontSize: 11, color: T.muted }}>{t('notes.classe')}</label>
           <select value={classeId} onChange={e => setClasseId(e.target.value)} style={{ width: '100%', background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 8, color: T.text }}>
@@ -133,12 +132,6 @@ export default function Notes() {
           <label style={{ fontSize: 11, color: T.muted }}>{t('notes.semestre')}</label>
           <select value={semestre} onChange={e => setSemestre(parseInt(e.target.value))} style={{ width: '100%', background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 8, color: T.text }}>
             <option value={1}>{t('notes.semestre1')}</option><option value={2}>{t('notes.semestre2')}</option>
-          </select>
-        </div>
-        <div>
-          <label style={{ fontSize: 11, color: T.muted }}>{t('notes.anneeScolaire')}</label>
-          <select value={anneeScolaire} onChange={e => setAnneeScolaire(e.target.value)} style={{ width: '100%', background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 8, color: T.text }}>
-            {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
           </select>
         </div>
       </div>

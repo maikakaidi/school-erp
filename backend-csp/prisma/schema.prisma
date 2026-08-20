@@ -45,6 +45,7 @@ model School {
   enseignants   Enseignant[]
   classes       Classe[]
   matieres      Matiere[]
+  matieresGroupes MatiereGroupe[]
   versements    Versement[]
   depenses      Depense[]
   examens       ExamenBlanc[]
@@ -173,7 +174,10 @@ model Matiere {
   libelle      String
   code         String?
   type         String?
+  isActive     Boolean             @default(true)
+  groupeId     String?
   school       School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  groupe       MatiereGroupe?      @relation(fields: [groupeId], references: [id])
   coefficients Coefficient[]
   notes        Note[]
   examResults  ExamenResultat[]
@@ -181,7 +185,20 @@ model Matiere {
   absences     Absence[]
   affectations Affectation[]
 
+  @@unique([schoolId, libelle])
   @@map("matieres")
+}
+
+// ==================== GROUPES DE MATIÈRES ====================
+model MatiereGroupe {
+  id        String    @id @default(uuid())
+  schoolId  String
+  nom       String
+  school    School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  matieres  Matiere[]
+
+  @@unique([schoolId, nom])
+  @@map("matieres_groupes")
 }
 
 // ==================== COEFFICIENTS ====================
@@ -209,6 +226,7 @@ model Inscription {
   dateInscription DateTime @default(now())
   type            String
   reduction       Float?
+  langueChoisie   String?
   eleve           Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
   classe          Classe   @relation(fields: [classeId], references: [id], onDelete: Cascade)
   school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -487,6 +505,7 @@ model Absence {
   eleveId            String
   classeId           String
   matiereId          String?
+  anneeScolaire      String?
   date               DateTime
   type               String // absence | retard
   motif              String?
@@ -500,6 +519,7 @@ model Absence {
   classe             Classe   @relation(fields: [classeId], references: [id], onDelete: Cascade)
   matiere            Matiere? @relation(fields: [matiereId], references: [id], onDelete: SetNull)
 
+  @@index([schoolId, anneeScolaire, date])
   @@index([schoolId, date])
   @@index([eleveId, date])
   @@index([classeId, date])

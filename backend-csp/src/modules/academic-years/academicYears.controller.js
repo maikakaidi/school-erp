@@ -10,7 +10,7 @@ export const getYears = async (req, res, next) => {
 export const getCurrentYear = async (req, res, next) => {
   try {
     const year = await academicYearService.getCurrentYear(req.user.schoolId);
-    res.json(year || { name: '2025-2026', isCurrent: true });
+    res.json(year || null);
   } catch (error) { next(error); }
 };
 

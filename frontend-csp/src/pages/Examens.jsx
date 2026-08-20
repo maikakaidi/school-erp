@@ -33,7 +33,7 @@ export default function Examens() {
     loadClasses();
     loadMatieres();
     loadExamens();
-  }, []);
+  }, [currentYear]);
 
   const loadClasses = async () => {
     try {

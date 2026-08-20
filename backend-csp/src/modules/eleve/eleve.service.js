@@ -61,10 +61,12 @@ export const getEmploiDuTemps = async (schoolId, eleveId, mois, annee) => {
   return await getEmploiDuTempsEleve(schoolId, eleveId, mois, annee);
 };
 
-export const getAbsences = async (schoolId, eleveId) => {
+export const getAbsences = async (schoolId, eleveId, anneeScolaire) => {
   await getEleveWithInscription(schoolId, eleveId);
+  const where = { schoolId, eleveId };
+  if (anneeScolaire) where.anneeScolaire = anneeScolaire;
   const absences = await prisma.absence.findMany({
-    where: { schoolId, eleveId },
+    where,
     include: { matiere: { select: { id: true, libelle: true } } },
     orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     take: 60,
@@ -116,7 +118,7 @@ export const getDashboard = async (schoolId, eleveId, anneeScolaire) => {
     ? await computeNotesForChild(schoolId, eleveId, inscription.classeId, annee)
     : { matieres: [], moyenneSemestre1: null, moyenneSemestre2: null, moyenneGenerale: null };
   const paiements = await getPayments(schoolId, eleveId, annee);
-  const absences = await getAbsences(schoolId, eleveId);
+  const absences = await getAbsences(schoolId, eleveId, annee);
 
   return {
     eleve: {

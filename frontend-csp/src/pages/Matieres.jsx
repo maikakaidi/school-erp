@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 
@@ -14,6 +14,7 @@ const emptyForm = { libelle: '', code: '', type: '' };
 export default function Matieres() {
   const { t } = useTranslation();
   const [matieres, setMatieres] = useState([]);
+  const [showInactive, setShowInactive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -21,7 +22,8 @@ export default function Matieres() {
   const loadMatieres = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth('/matieres');
+      const url = showInactive ? '/matieres?includeInactive=true' : '/matieres';
+      const data = await fetchWithAuth(url);
       setMatieres(data || []);
     } catch (err) {
       console.error(err);
@@ -30,7 +32,7 @@ export default function Matieres() {
     }
   };
 
-  useEffect(() => { loadMatieres(); }, []);
+  useEffect(() => { loadMatieres(); }, [showInactive]);
 
   const openAdd = () => { setForm(emptyForm); setModal('add'); };
   const openEdit = (m) => { setForm(m); setModal({ id: m.id }); };
@@ -48,21 +50,34 @@ export default function Matieres() {
     } catch (err) { alert(err.message); }
   };
 
-  const remove = async (id) => {
+  const softDelete = async (id) => {
     if (!confirm(t('matieres.deleteConfirm'))) return;
     try {
-      await fetchWithAuth(`/matieres/${id}`, { method: 'DELETE' });
+      await fetchWithAuth(`/matieres/${id}/soft-delete`, { method: 'PATCH' });
+      loadMatieres();
+    } catch (err) { alert(err.message); }
+  };
+
+  const restore = async (id) => {
+    try {
+      await fetchWithAuth(`/matieres/${id}/restore`, { method: 'PATCH' });
       loadMatieres();
     } catch (err) { alert(err.message); }
   };
 
   return (
     <div className="fade-up">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
         <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 24, color: T.text }}>{t('matieres.title')}</h1>
-        <button onClick={openAdd} style={{ background: T.accent, border: 'none', borderRadius: 10, padding: '8px 18px', color: '#fff', cursor: 'pointer' }}>
-          <Plus size={15} style={{ marginRight: 6 }} /> {t('matieres.newMatiere')}
-        </button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: T.muted, fontSize: 13, cursor: 'pointer' }}>
+            <input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} style={{ accentColor: T.accent }} />
+            Inactives
+          </label>
+          <button onClick={openAdd} style={{ background: T.accent, border: 'none', borderRadius: 10, padding: '8px 18px', color: '#fff', cursor: 'pointer' }}>
+            <Plus size={15} style={{ marginRight: 6 }} /> {t('matieres.newMatiere')}
+          </button>
+        </div>
       </div>
 
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden' }}>
@@ -73,18 +88,30 @@ export default function Matieres() {
                 <th style={{ padding: '12px', textAlign: 'left' }}>{t('matieres.headers.libelle')}</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>{t('matieres.headers.code')}</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>{t('matieres.headers.type')}</th>
+                <th style={{ padding: '12px', textAlign: 'center' }}>Groupe</th>
+                <th style={{ padding: '12px', textAlign: 'center' }}>État</th>
                 <th style={{ padding: '12px' }}>{t('matieres.headers.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {matieres.map((m, idx) => (
-                <tr key={m.id} style={{ borderBottom: `1px solid ${T.border}20`, background: idx % 2 ? '#0a1624' : 'transparent' }}>
+                <tr key={m.id} style={{ borderBottom: `1px solid ${T.border}20`, background: idx % 2 ? '#0a1624' : 'transparent', opacity: m.isActive === false ? 0.5 : 1 }}>
                   <td style={{ padding: '12px', color: T.text }}>{m.libelle}</td>
                   <td style={{ padding: '12px', color: T.muted }}>{m.code || '—'}</td>
                   <td style={{ padding: '12px', color: T.muted }}>{m.type || '—'}</td>
+                  <td style={{ padding: '12px', color: T.muted, textAlign: 'center' }}>{m.groupe?.nom || '—'}</td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <button onClick={() => openEdit(m)} style={{ background: T.accent + '20', border: 'none', borderRadius: 6, padding: '4px 8px', marginRight: 6, cursor: 'pointer' }}><Edit2 size={12} color={T.accent} /></button>
-                    <button onClick={() => remove(m.id)} style={{ background: T.red + '20', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer' }}><Trash2 size={12} color={T.red} /></button>
+                    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 11, background: m.isActive !== false ? T.green + '20' : T.red + '20', color: m.isActive !== false ? T.green : T.red }}>
+                      {m.isActive !== false ? 'Actif' : 'Inactif'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <button onClick={() => openEdit(m)} style={{ background: T.accent + '20', border: 'none', borderRadius: 6, padding: '4px 8px', marginRight: 4, cursor: 'pointer' }}><Edit2 size={12} color={T.accent} /></button>
+                    {m.isActive !== false ? (
+                      <button onClick={() => softDelete(m.id)} style={{ background: T.red + '20', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer' }}><Trash2 size={12} color={T.red} /></button>
+                    ) : (
+                      <button onClick={() => restore(m.id)} style={{ background: T.green + '20', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer' }}><RotateCcw size={12} color={T.green} /></button>
+                    )}
                   </td>
                 </tr>
               ))}

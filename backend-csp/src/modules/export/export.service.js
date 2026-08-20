@@ -18,7 +18,7 @@ export const generateAnnualExport = async (schoolId, anneeScolaire) => {
       orderBy: { datePaiement: 'desc' },
     }),
     prisma.absence.findMany({
-      where: { schoolId },
+      where: { schoolId, anneeScolaire },
       include: { eleve: true },
       orderBy: { date: 'desc' },
     }),

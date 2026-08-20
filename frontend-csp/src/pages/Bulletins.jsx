@@ -13,7 +13,6 @@ export default function Bulletins() {
   const { t } = useTranslation();
   const { years, currentYear } = useAcademicYear();
   const [searchTerm, setSearchTerm] = useState('');
-  const [annee, setAnnee] = useState(currentYear);
   const [semestre, setSemestre] = useState(1);
   const [eleve, setEleve] = useState(null);
   const [classes, setClasses] = useState([]);
@@ -43,7 +42,7 @@ export default function Bulletins() {
     if (!eleve) return;
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`/api/bulletins/generate?eleveId=${eleve.id}&semestre=${semestre}&anneeScolaire=${annee}`, {
+      const response = await fetch(`/api/bulletins/generate?eleveId=${eleve.id}&semestre=${semestre}&currentYearScolaire=${currentYear}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/pdf',
@@ -72,7 +71,7 @@ export default function Bulletins() {
     setGeneratingAll(true);
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`/api/bulletins/classe/${selectedClasse}?semestre=${semestre}&anneeScolaire=${annee}`, {
+      const response = await fetch(`/api/bulletins/classe/${selectedClasse}?semestre=${semestre}&currentYearScolaire=${currentYear}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -101,7 +100,7 @@ export default function Bulletins() {
     if (!selectedClasse) return;
     setLoadingClassement(true);
     try {
-      const data = await fetchWithAuth(`/bulletins/classement?classeId=${selectedClasse}&semestre=${semestre}&anneeScolaire=${annee}`);
+      const data = await fetchWithAuth(`/bulletins/classement?classeId=${selectedClasse}&semestre=${semestre}&currentYearScolaire=${currentYear}`);
       setClassement(data);
     } catch (err) { console.error(err); }
     finally { setLoadingClassement(false); }
@@ -128,12 +127,6 @@ export default function Bulletins() {
               <label style={{ fontSize: 11, color: T.muted }}>Semestre</label>
               <select value={semestre} onChange={e => setSemestre(parseInt(e.target.value))} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px', color: T.text }}>
                 <option value={1}>{t('notes.semestre1')}</option><option value={2}>{t('notes.semestre2')}</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: 11, color: T.muted }}>{t('common.year')}</label>
-              <select value={annee} onChange={e => setAnnee(e.target.value)} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px', color: T.text }}>
-                {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
               </select>
             </div>
             <button onClick={generateBulletin} disabled={!eleve} style={{ background: T.green, border: 'none', borderRadius: 8, padding: '8px 20px', color: '#fff', cursor: eleve ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 6 }}>

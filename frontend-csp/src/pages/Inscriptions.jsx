@@ -35,7 +35,6 @@ export default function Inscriptions() {
   const [classes, setClasses] = useState([]);
   const [modal, setModal] = useState(null); // null | 'add' | { id }
   const [form, setForm] = useState({ ...emptyForm, anneeScolaire: currentYear });
-  const [filterAnnee, setFilterAnnee] = useState(currentYear);
   const [searchEleve, setSearchEleve] = useState('');
 
   // Charger les listes nécessaires
@@ -59,7 +58,7 @@ export default function Inscriptions() {
   const loadInscriptions = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/inscriptions?anneeScolaire=${filterAnnee}`);
+      const data = await fetchWithAuth(`/inscriptions?anneeScolaire=${currentYear}`);
       setInscriptions(data || []);
     } catch (err) {
       console.error('Erreur chargement inscriptions', err);
@@ -70,13 +69,13 @@ export default function Inscriptions() {
 
   useEffect(() => {
     loadInscriptions();
-  }, [filterAnnee]);
+  }, [currentYear]);
 
   useEffect(() => {
     const handler = () => loadInscriptions();
     window.addEventListener('sync-complete', handler);
     return () => window.removeEventListener('sync-complete', handler);
-  }, [filterAnnee]);
+  }, [currentYear]);
 
   const openAdd = () => {
     setForm(emptyForm);
@@ -164,21 +163,6 @@ export default function Inscriptions() {
         }}>
           <Plus size={15} /> {t('inscriptions.newInscription')}
         </button>
-      </div>
-
-      {/* Filtre année */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
-        <label style={{ fontSize: 13, color: T.muted }}>{t('inscriptions.anneeScolaire')} :</label>
-        <select
-          value={filterAnnee}
-          onChange={e => setFilterAnnee(e.target.value)}
-          style={{
-            background: T.card, border: `1px solid ${T.border}`, borderRadius: 10, padding: '8px 14px',
-            color: T.text, fontSize: 13, outline: 'none', cursor: 'pointer',
-          }}
-        >
-          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
-        </select>
       </div>
 
       {/* Tableau des inscriptions */}

@@ -22,6 +22,7 @@ import Bulletins from './pages/Bulletins';
 import Versements from './pages/Versements';
 import FraisScolaires from './pages/FraisScolaires';
 import Matieres from './pages/Matieres';
+import MatieresConfig from './pages/MatieresConfig';
 import Coefficients from './pages/Coefficients';
 import Notes from './pages/Notes';
 import Examens from './pages/Examens';
@@ -176,6 +177,7 @@ function AppRoutes() {
       <Route path="/statistiques" element={<ProtectedLayout><Statistiques /></ProtectedLayout>} />
       <Route path="/frais" element={<ProtectedLayout><FraisScolaires /></ProtectedLayout>} />
       <Route path="/matieres" element={<ProtectedLayout><Matieres /></ProtectedLayout>} />
+      <Route path="/matieres-config" element={<ProtectedLayout><MatieresConfig /></ProtectedLayout>} />
       <Route path="/coefficients" element={<ProtectedLayout><Coefficients /></ProtectedLayout>} />
       <Route path="/parametres" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
       <Route path="/enseignants" element={<ProtectedLayout><Enseignants /></ProtectedLayout>} />

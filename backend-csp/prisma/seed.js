@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import { initializeDefaults } from '../src/modules/defaults/defaults.service.js';
 const prisma = new PrismaClient();
 
 const DEFAULT_SUPER_PASSWORD = 'SuperAdmin123!';
@@ -91,6 +92,15 @@ async function main() {
     });
   }
   console.log('Admin ecole OK');
+
+  // Initialiser les matières et coefficients par défaut
+  try {
+    const yearName = '2025-2026';
+    const result = await initializeDefaults(school.id, yearName);
+    console.log(`Defaults: ${result.created} coefficients créés pour ${result.classesCount} classes`);
+  } catch (e) {
+    console.log('Defaults initialization skipped:', e.message);
+  }
 }
 
 main()

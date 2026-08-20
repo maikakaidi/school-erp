@@ -50,13 +50,12 @@ export default function Dashboard() {
     recentEleves: [],
     prochainsExamens: [],
   });
-  const [annee, setAnnee] = useState(currentYear);
   const [loading, setLoading] = useState(true);
 
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/statistiques/dashboard?anneeScolaire=${annee}`);
+      const data = await fetchWithAuth(`/statistiques/dashboard?currentYearScolaire=${currentYear}`);
       setStats(data);
     } catch (err) {
       console.error(err);
@@ -75,7 +74,7 @@ export default function Dashboard() {
   useEffect(() => {
     loadDashboard();
     loadLogo();
-  }, [annee]);
+  }, [currentYear]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -124,7 +123,7 @@ export default function Dashboard() {
           )}
           <div>
             <h1 style={{ fontFamily: "'Fraunces', serif", fontWeight: 900, fontSize: 24, color: T.text }}>{t('dashboard.title')}</h1>
-            <p style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{t('dashboard.welcome', 'Bienvenue')} · {t('common.year')} {annee}</p>
+            <p style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{t('dashboard.welcome', 'Bienvenue')} · {t('common.year')} {currentYear}</p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -190,7 +189,7 @@ export default function Dashboard() {
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-            <StatCard title={t('dashboard.totalEleves')} value={stats.nbEleves} sub={`${t('common.year')} ${annee}`} icon={Users} color={T.accent} />
+            <StatCard title={t('dashboard.totalEleves')} value={stats.nbEleves} sub={`${t('common.year')} ${currentYear}`} icon={Users} color={T.accent} />
             <StatCard title={t('dashboard.totalVersements')} value={(stats.totalPercu / 1000).toFixed(0) + 'k'} sub="FCFA collectés" icon={DollarSign} color={T.green} />
             <StatCard title={t('dashboard.resteAPercevoir', 'Reste à percevoir')} value={(stats.resteAPercevoir / 1000).toFixed(0) + 'k'} sub="FCFA en attente" icon={AlertCircle} color={T.red} />
             <StatCard title={t('dashboard.classesActives', 'Classes actives')} value={stats.nbClasses} sub={t('dashboard.tousNiveaux', 'Tous niveaux')} icon={GraduationCap} color={T.blue} />

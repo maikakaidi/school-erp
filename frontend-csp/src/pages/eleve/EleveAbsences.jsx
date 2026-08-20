@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchWithAuth } from '../../api/fetchWithAuth';
+import { useAcademicYear } from '../../context/AcademicYearContext';
 import { CalendarX } from 'lucide-react';
 
 const T = {
@@ -9,17 +10,19 @@ const T = {
 };
 
 export default function EleveAbsences() {
+  const { currentYear } = useAcademicYear();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    fetchWithAuth('/eleve/absences')
+    const params = currentYear?.name ? `?anneeScolaire=${currentYear.name}` : '';
+    fetchWithAuth(`/eleve/absences${params}`)
       .then((d) => { if (!cancelled) setData(d); })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [currentYear]);
 
   if (loading && !data) return <div style={{ color: T.muted, padding: 40, textAlign: 'center' }}>Chargement...</div>;
 

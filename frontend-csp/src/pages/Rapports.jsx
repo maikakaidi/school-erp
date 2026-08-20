@@ -48,14 +48,13 @@ export default function Rapports() {
   const [classes, setClasses] = useState([]);
   const [classeId, setClasseId] = useState('');
   const [loading, setLoading] = useState(true);
-  const [annee, setAnnee] = useState(currentYear);
 
   const loadAll = async () => {
     setLoading(true);
     try {
       const [a, p, c] = await Promise.all([
-        fetchWithAuth(`/rapports/assiduite?anneeScolaire=${annee}${classeId ? `&classeId=${classeId}` : ''}`),
-        fetchWithAuth(`/rapports/paiements-en-retard?anneeScolaire=${annee}`),
+        fetchWithAuth(`/rapports/assiduite?anneeScolaire=${currentYear}${classeId ? `&classeId=${classeId}` : ''}`),
+        fetchWithAuth(`/rapports/paiements-en-retard?anneeScolaire=${currentYear}`),
         fetchWithAuth('/classes?limit=100'),
       ]);
       setAssiduite(a);
@@ -67,7 +66,7 @@ export default function Rapports() {
 
   useEffect(() => {
     loadAll();
-  }, [annee, classeId]);
+  }, [currentYear, classeId]);
 
   const Cell = ({ children, strong }) => (
     <td style={{
@@ -87,13 +86,6 @@ export default function Rapports() {
           <div style={{ fontSize: 12, color: T.muted }}>Assiduité par classe et paiements en retard</div>
         </div>
         <div style={{ flex: 1 }} />
-        <select
-          value={annee}
-          onChange={(e) => setAnnee(e.target.value)}
-          style={{ background: T.card, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', fontSize: 13 }}
-        >
-          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
-        </select>
         <button onClick={loadAll} style={{
           display: 'flex', alignItems: 'center', gap: 6, background: 'transparent',
           border: `1px solid ${T.border}`, color: T.muted, borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontSize: 12,

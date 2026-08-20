@@ -86,6 +86,35 @@ export const computeNotesForChild = async (schoolId, eleveId, classeId, anneeSco
   const coeffs = await prisma.coefficient.findMany({ where: { schoolId, classeId, anneeScolaire } });
   const coeffMap = new Map(coeffs.map((c) => [c.matiereId, c.coefficient]));
 
+  const allMatieresForGroups = await prisma.matiere.findMany({
+    where: { schoolId }, select: { id: true, libelle: true, groupeId: true },
+  });
+  const groupes = await prisma.matiereGroupe.findMany({
+    where: { schoolId },
+    include: { matieres: { select: { id: true } } },
+  });
+  for (const groupe of groupes) {
+    const proxyMatiere = allMatieresForGroups.find(m => m.libelle === groupe.nom && !m.groupeId);
+    if (!proxyMatiere) continue;
+    const proxyCoeff = coeffMap.get(proxyMatiere.id);
+    if (proxyCoeff == null) continue;
+    for (const member of groupe.matieres) {
+      if (!coeffMap.has(member.id)) coeffMap.set(member.id, proxyCoeff);
+    }
+  }
+
+  const inscription = await prisma.inscription.findFirst({
+    where: { schoolId, eleveId, anneeScolaire },
+    select: { langueChoisie: true },
+  });
+  const langueChoisie = inscription?.langueChoisie;
+
+  const allMatieres = await prisma.matiere.findMany({
+    where: { schoolId },
+    select: { id: true, libelle: true, groupeId: true },
+  });
+  const groupeMap = new Map(allMatieres.map(m => [m.id, m.groupeId]));
+
   const notes = await prisma.note.findMany({
     where: { schoolId, eleveId, anneeScolaire },
     include: { matiere: true },
@@ -94,12 +123,16 @@ export const computeNotesForChild = async (schoolId, eleveId, classeId, anneeSco
 
   const byMatiere = new Map();
   for (const n of notes) {
+    const gId = groupeMap.get(n.matiereId);
+    if (gId && langueChoisie !== n.matiere.libelle) continue;
+    const coefficient = coeffMap.get(n.matiereId);
+    if (!coefficient) continue;
     if (!byMatiere.has(n.matiereId)) {
       byMatiere.set(n.matiereId, {
         matiereId: n.matiereId,
         libelle: n.matiere.libelle,
         type: n.matiere.type || null,
-        coefficient: coeffMap.get(n.matiereId) || 1,
+        coefficient,
         semestre1: null,
         semestre2: null,
       });
@@ -188,8 +221,10 @@ export const getPayments = async (schoolId, parentId, eleveId, anneeScolaire) =>
 export const getAbsences = async (schoolId, parentId, eleveId, anneeScolaire) => {
   await getChildOwned(schoolId, parentId, eleveId);
 
+  const where = { schoolId, eleveId };
+  if (anneeScolaire) where.anneeScolaire = anneeScolaire;
   const absences = await prisma.absence.findMany({
-    where: { schoolId, eleveId },
+    where,
     include: { matiere: { select: { id: true, libelle: true } } },
     orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     take: 60,

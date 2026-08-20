@@ -1,8 +1,10 @@
 import prisma from '../../config/database.js';
 
 export const getDashboardStats = async (schoolId, anneeScolaire) => {
-  // 1. Nombre d'élèves actifs
-  const nbEleves = await prisma.eleve.count({ where: { schoolId, isActive: true } });
+  // 1. Nombre d'élèves inscrits pour l'année sélectionnée
+  const nbEleves = await prisma.inscription.count({
+    where: { schoolId, anneeScolaire },
+  });
 
   // 2. Nombre de classes actives (avec inscriptions pour l'année)
   const nbClasses = await prisma.classe.count({

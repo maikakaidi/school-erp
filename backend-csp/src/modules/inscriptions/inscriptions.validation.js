@@ -6,6 +6,7 @@ export const createInscriptionSchema = z.object({
   anneeScolaire: z.string(),
   type: z.string().optional().default('Ordinaire'),
   reduction: z.number().min(0).max(100).optional().default(0),
+  langueChoisie: z.string().optional(),
 });
 
 export const updateInscriptionSchema = createInscriptionSchema.partial();

@@ -32,14 +32,13 @@ export default function Statistiques() {
   const { years, currentYear } = useAcademicYear();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [annee, setAnnee] = useState(currentYear);
 
-  useEffect(() => { load(); }, [annee]);
+  useEffect(() => { load(); }, [currentYear]);
 
   const load = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/statistiques/dashboard?anneeScolaire=${annee}`);
+      const data = await fetchWithAuth(`/statistiques/dashboard?currentYearScolaire=${currentYear}`);
       setStats(data);
     } catch (e) { console.error(e); }
     setLoading(false);
@@ -59,12 +58,8 @@ export default function Statistiques() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 24, fontWeight: 900 }}>{t('statistiques.title')}</h1>
-          <p style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>{t('statistiques.subtitle')} {annee}</p>
+          <p style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>{t('statistiques.subtitle')} {currentYear}</p>
         </div>
-        <select value={annee} onChange={e => setAnnee(e.target.value)}
-          style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 12px', color: T.text, fontSize: 12 }}>
-          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
-        </select>
       </div>
 
       {/* KPI Cards */}

@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../../config/database.js';
+import { initializeDefaults } from '../defaults/defaults.service.js';
 
 const ACCESS_TTL = '8h';
 const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 jours
@@ -53,6 +54,11 @@ export const registerSchool = async (data) => {
   await prisma.schoolSetting.create({
     data: { schoolId: school.id }
   });
+  // Initialiser les matières et coefficients par défaut
+  try {
+    const yearName = `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
+    await initializeDefaults(school.id, yearName);
+  } catch (_) { /* pas bloquant si échec */ }
   const { accessToken, refreshToken } = await issueTokens(
     { schoolId: school.id },
     'school',

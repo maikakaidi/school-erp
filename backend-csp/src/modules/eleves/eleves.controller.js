@@ -2,6 +2,7 @@ import * as eleveService from './eleves.service.js';
 import { z } from 'zod';
 import { sendExcel } from '../../utils/excel.export.js';
 import { logAudit, auditActorFromReq } from '../audit/audit.service.js';
+import { resolveAcademicYear } from '../academic-years/academicYears.service.js';
 
 const createEleveSchema = z.object({
   nom: z.string().min(1),
@@ -15,6 +16,8 @@ const createEleveSchema = z.object({
   adresseParent: z.string(),
   telParent: z.string(),
   classeId: z.string().uuid().optional(),
+  langueChoisie: z.string().optional(),
+  anneeScolaire: z.string().optional(),
   password: z.string().min(4, 'Mot de passe minimum 4 caractères').optional(),
 });
 
@@ -23,13 +26,14 @@ const updateEleveSchema = createEleveSchema.partial();
 export const getAll = async (req, res, next) => {
   try {
     const { page, limit, search, classeId, anneeScolaire } = req.query;
+    const year = await resolveAcademicYear(req.user.schoolId, anneeScolaire);
     const result = await eleveService.getAllEleves(
       req.user.schoolId,
       parseInt(page) || 1,
       parseInt(limit) || 20,
       search || '',
       classeId,
-      anneeScolaire || '2025-2026'
+      year
     );
     res.json(result);
   } catch (error) { next(error); }
@@ -37,7 +41,8 @@ export const getAll = async (req, res, next) => {
 
 export const getOne = async (req, res, next) => {
   try {
-    const eleve = await eleveService.getEleveById(req.params.id, req.user.schoolId);
+    const { anneeScolaire } = req.query;
+    const eleve = await eleveService.getEleveById(req.params.id, req.user.schoolId, anneeScolaire);
     if (!eleve) return res.status(404).json({ message: req.t('student_not_found') });
     res.json(eleve);
   } catch (error) { next(error); }
@@ -70,7 +75,8 @@ export const remove = async (req, res, next) => {
 export const exportExcel = async (req, res, next) => {
   try {
     const { anneeScolaire } = req.query;
-    const rows = await eleveService.exportEleves(req.user.schoolId, anneeScolaire || '2025-2026');
+    const year = await resolveAcademicYear(req.user.schoolId, anneeScolaire);
+    const rows = await eleveService.exportEleves(req.user.schoolId, year);
     sendExcel(res, rows, 'eleves.xlsx');
   } catch (error) { next(error); }
 };

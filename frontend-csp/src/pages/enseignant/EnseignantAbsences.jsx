@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useEnseignant } from '../../context/EnseignantContext';
 import { fetchWithAuth } from '../../api/fetchWithAuth';
+import { useAcademicYear } from '../../context/AcademicYearContext';
 import { CalendarX, Plus, Trash2, Loader, X } from 'lucide-react';
 
 const T = {
@@ -23,6 +24,7 @@ const fmtDate = (d) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit',
 
 export default function EnseignantAbsences() {
   const { classes, affectations } = useEnseignant();
+  const { currentYear } = useAcademicYear();
   const [classeId, setClasseId] = useState('');
   const [type, setType] = useState('tous');
   const [dateDebut, setDateDebut] = useState('');
@@ -42,6 +44,7 @@ export default function EnseignantAbsences() {
     setLoading(true);
     try {
       const q = new URLSearchParams();
+      if (currentYear?.name) q.set('anneeScolaire', currentYear.name);
       if (classeId) q.set('classeId', classeId);
       if (type && type !== 'tous') q.set('type', type);
       if (dateDebut) q.set('dateDebut', dateDebut);
@@ -56,7 +59,7 @@ export default function EnseignantAbsences() {
     setLoading(false);
   };
 
-  useEffect(() => { load(1); setPage(1); }, [classeId, type, dateDebut, dateFin]);
+  useEffect(() => { load(1); setPage(1); }, [classeId, type, dateDebut, dateFin, currentYear]);
 
   useEffect(() => { if (!form.classeId) return; fetchWithAuth(`/prof/eleves?classeId=${form.classeId}`).then(d => setEleves(d.eleves || [])).catch(() => {}); }, [form.classeId]);
 

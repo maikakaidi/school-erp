@@ -24,12 +24,41 @@ export const calculateBulletin = async (schoolId, eleveId, semestre, anneeScolai
   if (!inscription) throw new Error('Élève non inscrit pour cette année');
   const classe = inscription.classe;
   const classeId = classe.id;
+  const langueChoisie = inscription.langueChoisie;
 
   const notesEleve = await prisma.note.findMany({
     where: { schoolId, eleveId, semestre, anneeScolaire },
     include: { matiere: true },
   });
   if (notesEleve.length === 0) throw new Error('Aucune note trouvée pour cet élève');
+
+  const allMatieres = await prisma.matiere.findMany({
+    where: { schoolId },
+    select: { id: true, libelle: true, groupeId: true },
+  });
+  const groupeMap = new Map(allMatieres.map(m => [m.id, m.groupeId]));
+
+  const coefficients = await prisma.coefficient.findMany({
+    where: { schoolId, classeId, anneeScolaire },
+  });
+  const coeffMap = new Map();
+  coefficients.forEach(c => coeffMap.set(c.matiereId, c.coefficient));
+
+  const groupes = await prisma.matiereGroupe.findMany({
+    where: { schoolId },
+    include: { matieres: { select: { id: true } } },
+  });
+  for (const groupe of groupes) {
+    const proxyMatiere = allMatieres.find(m => m.libelle === groupe.nom && !m.groupeId);
+    if (!proxyMatiere) continue;
+    const proxyCoeff = coeffMap.get(proxyMatiere.id);
+    if (proxyCoeff == null) continue;
+    for (const member of groupe.matieres) {
+      if (!coeffMap.has(member.id)) {
+        coeffMap.set(member.id, proxyCoeff);
+      }
+    }
+  }
 
   const elevesClasse = await prisma.eleve.findMany({
     where: {
@@ -42,21 +71,34 @@ export const calculateBulletin = async (schoolId, eleveId, semestre, anneeScolai
         where: { semestre, anneeScolaire },
         include: { matiere: true },
       },
+      inscriptions: {
+        where: { anneeScolaire },
+        select: { langueChoisie: true },
+        take: 1,
+      },
     },
   });
 
-  const coefficients = await prisma.coefficient.findMany({
-    where: { schoolId, classeId, anneeScolaire },
+  const filteredNotes = notesEleve.filter(n => {
+    const groupeId = groupeMap.get(n.matiereId);
+    if (groupeId) {
+      return langueChoisie === n.matiere.libelle;
+    }
+    return true;
   });
-  const coeffMap = new Map();
-  coefficients.forEach(c => coeffMap.set(c.matiereId, c.coefficient));
 
-  const matieresIds = [...new Set(notesEleve.map(n => n.matiereId))];
+  const matieresIds = [...new Set(filteredNotes.map(n => n.matiereId))];
   const moyennesClasseParMatiere = {};
   for (const matId of matieresIds) {
     let sum = 0, count = 0;
     for (const e of elevesClasse) {
-      const note = e.notes.find(n => n.matiereId === matId);
+      const eLangue = e.inscriptions?.[0]?.langueChoisie;
+      const note = e.notes.find(n => {
+        if (n.matiereId !== matId) return false;
+        const gId = groupeMap.get(n.matiereId);
+        if (gId) return eLangue === n.matiere.libelle;
+        return true;
+      });
       if (note && note.moyenne !== null) { sum += note.moyenne; count++; }
     }
     moyennesClasseParMatiere[matId] = count > 0 ? sum / count : 0;
@@ -67,8 +109,9 @@ export const calculateBulletin = async (schoolId, eleveId, semestre, anneeScolai
   let totalPointsLitteraire = 0, totalCoefsLitteraire = 0;
 
   const matieresDetails = [];
-  for (const n of notesEleve) {
-    const coeff = coeffMap.get(n.matiereId) || 1;
+  for (const n of filteredNotes) {
+    const coeff = coeffMap.get(n.matiereId);
+    if (!coeff) continue;
     const moyenneMatiere = n.moyenne || 0;
     const moyenneClasse = moyennesClasseParMatiere[n.matiereId] || 0;
     const noteCompo = n.composition || 0;
@@ -102,8 +145,12 @@ export const calculateBulletin = async (schoolId, eleveId, semestre, anneeScolai
   const moyennesEleves = [];
   for (const e of elevesClasse) {
     let total = 0, coefs = 0;
+    const eLangue = e.inscriptions?.[0]?.langueChoisie;
     for (const n of e.notes) {
-      const coeff = coeffMap.get(n.matiereId) || 1;
+      const coeff = coeffMap.get(n.matiereId);
+      if (!coeff) continue;
+      const gId = groupeMap.get(n.matiereId);
+      if (gId && eLangue !== n.matiere.libelle) continue;
       total += (n.moyenne || 0) * coeff;
       coefs += coeff;
     }
@@ -114,6 +161,13 @@ export const calculateBulletin = async (schoolId, eleveId, semestre, anneeScolai
   const meilleureMoyenne = moyennesEleves[0]?.moyenne || 0;
   const moinsBonneMoyenne = moyennesEleves[moyennesEleves.length - 1]?.moyenne || 0;
   const effectif = elevesClasse.length;
+
+  const absencesNonJustifiees = await prisma.absence.count({
+    where: { schoolId, eleveId, anneeScolaire, type: 'absence', justifie: false },
+  });
+  const retardsNonJustifies = await prisma.absence.count({
+    where: { schoolId, eleveId, anneeScolaire, type: 'retard', justifie: false },
+  });
 
   return {
     eleveId,
@@ -134,6 +188,8 @@ export const calculateBulletin = async (schoolId, eleveId, semestre, anneeScolai
     moyenneScientifique,
     moyenneLitteraire,
     matieres: matieresDetails,
+    absencesNonJustifiees,
+    retardsNonJustifies,
   };
 };
 
@@ -480,7 +536,11 @@ export const generateBulletinPDF = async (schoolId, eleveId, semestre, anneeScol
     },
     {
       label: 'ASSIDUITE-RETARD',
-      options: ['Absence non justifiées: 0', 'Retard non justifié: 0', 'Expulsions: 0'],
+      options: [
+        `Absence non justifiées: ${bulletinData.absencesNonJustifiees}`,
+        `Retard non justifié: ${bulletinData.retardsNonJustifies}`,
+        'Expulsions: 0',
+      ],
     },
   ];
 
@@ -582,7 +642,8 @@ export const getClassement = async (schoolId, classeId, semestre, anneeScolaire)
   const eleves = await prisma.eleve.findMany({
     where: { schoolId, inscriptions: { some: { classeId, anneeScolaire } } },
     include: {
-      notes: { where: { semestre, anneeScolaire } },
+      notes: { where: { semestre, anneeScolaire }, include: { matiere: true } },
+      inscriptions: { where: { anneeScolaire }, select: { langueChoisie: true }, take: 1 },
     },
   });
   const coeffs = await prisma.coefficient.findMany({
@@ -590,11 +651,36 @@ export const getClassement = async (schoolId, classeId, semestre, anneeScolaire)
   });
   const coeffMap = new Map();
   coeffs.forEach(c => coeffMap.set(c.matiereId, c.coefficient));
+
+  const allMatieres = await prisma.matiere.findMany({
+    where: { schoolId },
+    select: { id: true, libelle: true, groupeId: true },
+  });
+  const groupeMap = new Map(allMatieres.map(m => [m.id, m.groupeId]));
+
+  const groupes = await prisma.matiereGroupe.findMany({
+    where: { schoolId },
+    include: { matieres: { select: { id: true } } },
+  });
+  for (const groupe of groupes) {
+    const proxyMatiere = allMatieres.find(m => m.libelle === groupe.nom && !m.groupeId);
+    if (!proxyMatiere) continue;
+    const proxyCoeff = coeffMap.get(proxyMatiere.id);
+    if (proxyCoeff == null) continue;
+    for (const member of groupe.matieres) {
+      if (!coeffMap.has(member.id)) coeffMap.set(member.id, proxyCoeff);
+    }
+  }
+
   const classement = [];
   for (const eleve of eleves) {
     let total = 0, totalCoef = 0;
+    const eLangue = eleve.inscriptions?.[0]?.langueChoisie;
     for (const note of eleve.notes) {
-      const coeff = coeffMap.get(note.matiereId) || 1;
+      const coeff = coeffMap.get(note.matiereId);
+      if (!coeff) continue;
+      const gId = groupeMap.get(note.matiereId);
+      if (gId && eLangue !== note.matiere.libelle) continue;
       total += (note.moyenne || 0) * coeff;
       totalCoef += coeff;
     }

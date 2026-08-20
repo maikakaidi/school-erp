@@ -12,7 +12,6 @@ export default function FraisScolaires() {
   const { t } = useTranslation();
   const { years, currentYear } = useAcademicYear();
   const [classes, setClasses] = useState([]);
-  const [annee, setAnnee] = useState(currentYear);
   const [fraisList, setFraisList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -24,7 +23,7 @@ export default function FraisScolaires() {
 
   useEffect(() => {
     loadFrais();
-  }, [annee]);
+  }, [currentYear]);
 
   const loadClasses = async () => {
     try {
@@ -38,7 +37,7 @@ export default function FraisScolaires() {
   const loadFrais = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/frais?anneeScolaire=${annee}`);
+      const data = await fetchWithAuth(`/frais?currentYearScolaire=${currentYear}`);
       setFraisList(data);
       // Initialiser les valeurs du formulaire pour chaque classe
       const initial = {};
@@ -80,7 +79,7 @@ export default function FraisScolaires() {
         method: 'POST',
         body: JSON.stringify({
           classeId,
-          anneeScolaire: annee,
+          currentYearScolaire: currentYear,
           versement1: parseFloat(values.v1) || 0,
           versement2: parseFloat(values.v2) || 0,
           versement3: parseFloat(values.v3) || 0,
@@ -96,18 +95,7 @@ export default function FraisScolaires() {
   return (
     <div className="fade-up">
       <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 24, color: T.text }}>{t('frais.title')}</h1>
-      <p style={{ marginBottom: 20, color: T.muted }}>{t('frais.subtitle')}</p>
-
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ marginRight: 10, color: T.muted }}>{t('frais.anneeScolaire')}</label>
-        <select
-          value={annee}
-          onChange={e => setAnnee(e.target.value)}
-          style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 12px', color: T.text }}
-        >
-          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
-        </select>
-      </div>
+      <p style={{ marginBottom: 20, color: T.muted }}>{t('frais.subtitle')} — {currentYear}</p>
 
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden' }}>
         {loading ? (

@@ -43,9 +43,9 @@ export const saveNotes = async (req, res, next) => {
 
 export const getAbsences = async (req, res, next) => {
   try {
-    const { classeId, dateDebut, dateFin, type, page, limit } = req.query;
+    const { classeId, anneeScolaire, dateDebut, dateFin, type, page, limit } = req.query;
     res.json(await profService.getAbsences(schoolId(req), enseignantId(req), {
-      classeId, dateDebut, dateFin, type,
+      classeId, anneeScolaire, dateDebut, dateFin, type,
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 20,
     }));

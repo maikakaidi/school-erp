@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParent } from '../../context/ParentContext';
 import { fetchWithAuth } from '../../api/fetchWithAuth';
+import { useAcademicYear } from '../../context/AcademicYearContext';
 import { CalendarX, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const T = {
@@ -13,6 +14,7 @@ const fmtDate = (d) => new Date(d).toLocaleDateString('fr-FR');
 
 export default function ParentAbsences() {
   const { children, selectedChildId } = useParent();
+  const { currentYear } = useAcademicYear();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -20,12 +22,13 @@ export default function ParentAbsences() {
     if (!selectedChildId) return;
     let cancelled = false;
     setLoading(true);
-    fetchWithAuth(`/parent/absences?childId=${selectedChildId}`)
+    const params = `childId=${selectedChildId}${currentYear?.name ? `&anneeScolaire=${currentYear.name}` : ''}`;
+    fetchWithAuth(`/parent/absences?${params}`)
       .then((d) => { if (!cancelled) setData(d); })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [selectedChildId]);
+  }, [selectedChildId, currentYear]);
 
   if (children.length === 0) {
     return <div style={{ color: T.muted, padding: 40, textAlign: 'center' }}>Aucun enfant rattaché à votre compte.</div>;

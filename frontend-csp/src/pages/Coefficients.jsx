@@ -14,7 +14,6 @@ export default function Coefficients() {
   const { years, currentYear } = useAcademicYear();
   const [classes, setClasses] = useState([]);
   const [matieres, setMatieres] = useState([]);
-  const [annee, setAnnee] = useState(currentYear);
   const [coeffs, setCoeffs] = useState({});
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,19 +24,19 @@ export default function Coefficients() {
       fetchWithAuth('/matieres')
     ]).then(([c, m]) => {
       setClasses(c.classes || []);
-      setMatieres(m || []);
+      setMatieres((m || []).filter(mat => mat.isActive !== false));
     }).catch(console.error);
   }, []);
 
   useEffect(() => {
     if (classes.length === 0 || matieres.length === 0) return;
     loadCoefficients();
-  }, [annee, classes, matieres]);
+  }, [currentYear, classes, matieres]);
 
   const loadCoefficients = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/coefficients?anneeScolaire=${annee}`);
+      const data = await fetchWithAuth(`/coefficients?currentYearScolaire=${currentYear}`);
       const map = {};
       data.forEach(c => {
         map[`${c.classeId}_${c.matiereId}`] = c.coefficient;
@@ -51,7 +50,7 @@ export default function Coefficients() {
     try {
       await fetchWithAuth('/coefficients', {
         method: 'POST',
-        body: JSON.stringify({ classeId, matiereId, coefficient: parseInt(coeff), anneeScolaire: annee })
+        body: JSON.stringify({ classeId, matiereId, coefficient: parseInt(coeff), currentYearScolaire: currentYear })
       });
       setCoeffs(prev => ({ ...prev, [`${classeId}_${matiereId}`]: coeff }));
       setEditing(null);
@@ -63,14 +62,7 @@ export default function Coefficients() {
   return (
     <div className="fade-up">
       <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 24, color: T.text }}>{t('coefficients.title')}</h1>
-      <p style={{ marginBottom: 20, color: T.muted }}>{t('coefficients.subtitle')}</p>
-
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ marginRight: 10, color: T.muted }}>{t('coefficients.anneeScolaire')}</label>
-        <select value={annee} onChange={e => setAnnee(e.target.value)} style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 12px', color: T.text }}>
-          {years.map(y => <option key={y.name} value={y.name}>{y.name}</option>)}
-        </select>
-      </div>
+      <p style={{ marginBottom: 20, color: T.muted }}>{t('coefficients.subtitle')} — {currentYear}</p>
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', background: T.card, borderRadius: 14 }}>

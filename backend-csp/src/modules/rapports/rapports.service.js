@@ -19,7 +19,6 @@ export const getAssiduiteParClasse = async (schoolId, anneeScolaire, classeId = 
     error.status = 400;
     throw error;
   }
-  const { start, end } = bounds;
 
   const inscriptions = await prisma.inscription.findMany({
     where: { schoolId, anneeScolaire, ...(classeId ? { classeId } : {}) },
@@ -29,7 +28,7 @@ export const getAssiduiteParClasse = async (schoolId, anneeScolaire, classeId = 
 
   const classeIds = [...new Set(inscriptions.map((i) => i.classeId))];
   const absences = await prisma.absence.findMany({
-    where: { schoolId, classeId: { in: classeIds }, date: { gte: start, lt: end } },
+    where: { schoolId, classeId: { in: classeIds }, anneeScolaire },
     select: { classeId: true, type: true },
   });
 

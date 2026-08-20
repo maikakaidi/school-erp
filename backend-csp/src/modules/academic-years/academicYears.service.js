@@ -18,6 +18,22 @@ export const getCurrentYear = async (schoolId) => {
   });
 };
 
+export const resolveAcademicYear = async (schoolId, anneeScolaire, dateStr) => {
+  if (anneeScolaire) return anneeScolaire;
+  if (dateStr) {
+    const target = new Date(dateStr);
+    if (!isNaN(target.getTime())) {
+      const year = await prisma.academicYear.findFirst({
+        where: { schoolId, isArchived: false, startDate: { lte: target }, endDate: { gte: target } },
+      });
+      if (year) return year.name;
+    }
+  }
+  const current = await getCurrentYear(schoolId);
+  if (current) return current.name;
+  throw Object.assign(new Error('Aucune année scolaire configurée. Veuillez créer une année scolaire dans les paramètres.'), { status: 400 });
+};
+
 export const createYear = async (schoolId, { name, startDate, endDate }) => {
   const existing = await prisma.academicYear.findUnique({
     where: { schoolId_name: { schoolId, name } },

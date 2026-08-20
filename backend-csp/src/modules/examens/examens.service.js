@@ -46,13 +46,19 @@ export const getResultats = async (schoolId, examenId) => {
 };
 
 export const repartitionSalles = async (schoolId, examenId) => {
+  const examen = await prisma.examenBlanc.findFirst({
+    where: { id: examenId, schoolId },
+    select: { id: true, anneeScolaire: true },
+  });
+  if (!examen) throw new Error('Examen non trouvé');
+
   const examenData = await prisma.examenBlanc.findFirst({
     where: { id: examenId, schoolId },
     include: {
       classe: {
         include: {
           inscriptions: {
-            where: { anneeScolaire: '2025-2026' },
+            where: { anneeScolaire: examen.anneeScolaire },
             include: { eleve: true },
           },
         },

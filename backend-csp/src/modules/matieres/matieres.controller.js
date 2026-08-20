@@ -3,7 +3,8 @@ import { createMatiereSchema, updateMatiereSchema } from './matieres.validation.
 
 export const getAll = async (req, res, next) => {
   try {
-    const data = await matiereService.getAllMatieres(req.user.schoolId);
+    const includeInactive = req.query.includeInactive === 'true';
+    const data = await matiereService.getAllMatieres(req.user.schoolId, includeInactive);
     res.json(data);
   } catch (error) { next(error); }
 };
@@ -32,9 +33,38 @@ export const update = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-export const remove = async (req, res, next) => {
+export const softDelete = async (req, res, next) => {
   try {
-    await matiereService.deleteMatiere(req.params.id, req.user.schoolId);
+    await matiereService.softDeleteMatiere(req.params.id, req.user.schoolId);
+    res.status(204).send();
+  } catch (error) { next(error); }
+};
+
+export const restore = async (req, res, next) => {
+  try {
+    await matiereService.restoreMatiere(req.params.id, req.user.schoolId);
+    res.json({ message: 'Matière restaurée' });
+  } catch (error) { next(error); }
+};
+
+export const getGroupes = async (req, res, next) => {
+  try {
+    const data = await matiereService.getMatieresGroupes(req.user.schoolId);
+    res.json(data);
+  } catch (error) { next(error); }
+};
+
+export const createGroupe = async (req, res, next) => {
+  try {
+    const { nom } = req.body;
+    const data = await matiereService.createMatiereGroupe(req.user.schoolId, nom);
+    res.status(201).json(data);
+  } catch (error) { next(error); }
+};
+
+export const deleteGroupe = async (req, res, next) => {
+  try {
+    await matiereService.deleteMatiereGroupe(req.params.id, req.user.schoolId);
     res.status(204).send();
   } catch (error) { next(error); }
 };
