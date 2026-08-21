@@ -40,7 +40,7 @@ export const createYear = async (schoolId, { name, startDate, endDate }) => {
   });
   if (existing) throw Object.assign(new Error('Cette année scolaire existe déjà'), { status: 409 });
 
-  // Générer les dates par défaut à partir du nom (ex: "2026-2027" → sept 2026 - juin 2027)
+  // Générer les dates par défaut à partir du nom (ex: "AAAA-BBBB" → sept AAAA - juin BBBB)
   if (!startDate || !endDate) {
     const match = name.match(/^(\d{4})-(\d{4})$/);
     if (match) {

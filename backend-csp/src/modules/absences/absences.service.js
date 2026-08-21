@@ -215,7 +215,11 @@ export const bulkCreateAbsences = async (schoolId, data) => {
 
 export const updateAbsence = async (schoolId, id, data) => {
   const existing = await prisma.absence.findFirst({ where: { id, schoolId } });
-  if (!existing) throw new Error('Absence non trouvée');
+  if (!existing) {
+    const err = new Error('Absence non trouvée');
+    err.status = 404;
+    throw err;
+  }
 
   const patch = {};
   if (data.date) patch.date = toMidday(data.date);

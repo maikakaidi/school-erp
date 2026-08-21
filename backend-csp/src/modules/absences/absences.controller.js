@@ -58,7 +58,10 @@ export const update = async (req, res, next) => {
     const data = updateAbsenceSchema.parse(req.body);
     const absence = await absenceService.updateAbsence(req.user.schoolId, req.params.id, data);
     res.json(absence);
-  } catch (error) { next(error); }
+  } catch (error) {
+    if (error.name === 'ZodError') error.status = 400;
+    next(error);
+  }
 };
 
 export const remove = async (req, res, next) => {

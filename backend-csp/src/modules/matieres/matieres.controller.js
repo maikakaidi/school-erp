@@ -28,9 +28,14 @@ export const create = async (req, res, next) => {
 export const update = async (req, res, next) => {
   try {
     const validated = updateMatiereSchema.parse(req.body);
-    await matiereService.updateMatiere(req.params.id, req.user.schoolId, validated);
+    const result = await matiereService.updateMatiere(req.params.id, req.user.schoolId, validated);
+    if (result.count === 0) return res.status(404).json({ message: 'Matière non trouvée' });
     res.json({ message: 'Matière mise à jour' });
-  } catch (error) { next(error); }
+  } catch (error) {
+    if (error.name === 'ZodError') error.status = 400;
+    if (error.code === 'P2002') { error.status = 409; error.message = 'Une matière avec ce libellé existe déjà'; }
+    next(error);
+  }
 };
 
 export const softDelete = async (req, res, next) => {
