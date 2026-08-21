@@ -5,7 +5,7 @@ import {
   Home, Users, UserCheck, BookOpen, FileText,
   Award, DollarSign, CreditCard, Briefcase,
   BarChart2, Settings, Shield, LogOut, ChevronRight,
-  Calculator, Table, TrendingUp, Building2, Globe, UserCheck2, CalendarX, Megaphone, CalendarDays, MessageSquare
+  Calculator, Table, TrendingUp, Building2, Globe, UserCheck2, CalendarX, Megaphone, CalendarDays, MessageSquare, Clock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAcademicYear } from '../context/AcademicYearContext';
