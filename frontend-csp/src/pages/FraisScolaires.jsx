@@ -37,7 +37,7 @@ export default function FraisScolaires() {
   const loadFrais = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/frais?currentYearScolaire=${currentYear}`);
+      const data = await fetchWithAuth(`/frais?anneeScolaire=${currentYear}`);
       setFraisList(data);
       // Initialiser les valeurs du formulaire pour chaque classe
       const initial = {};
@@ -79,7 +79,7 @@ export default function FraisScolaires() {
         method: 'POST',
         body: JSON.stringify({
           classeId,
-          currentYearScolaire: currentYear,
+          anneeScolaire: currentYear,
           versement1: parseFloat(values.v1) || 0,
           versement2: parseFloat(values.v2) || 0,
           versement3: parseFloat(values.v3) || 0,

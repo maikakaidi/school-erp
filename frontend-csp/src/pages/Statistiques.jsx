@@ -38,7 +38,7 @@ export default function Statistiques() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/statistiques/dashboard?currentYearScolaire=${currentYear}`);
+      const data = await fetchWithAuth(`/statistiques/dashboard?anneeScolaire=${currentYear}`);
       setStats(data);
     } catch (e) { console.error(e); }
     setLoading(false);

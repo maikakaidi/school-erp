@@ -36,7 +36,7 @@ export default function MatieresConfig() {
     Promise.all([
       fetchWithAuth('/classes?limit=100'),
       fetchWithAuth('/matieres'),
-      fetchWithAuth(`/coefficients?currentYearScolaire=${currentYear}`)
+      fetchWithAuth(`/coefficients?anneeScolaire=${currentYear}`)
     ]).then(([c, m, co]) => {
       setClasses(c.classes || []);
       setMatieres((m || []).filter(mat => mat.isActive !== false));
@@ -81,7 +81,7 @@ export default function MatieresConfig() {
           try {
             await fetchWithAuth('/coefficients', {
               method: 'POST',
-              body: JSON.stringify({ classeId: classe.id, matiereId: m.id, coefficient: val, currentYearScolaire: currentYear })
+              body: JSON.stringify({ classeId: classe.id, matiereId: m.id, coefficient: val, anneeScolaire: currentYear })
             });
             saved++;
           } catch (err) { console.error(err); }

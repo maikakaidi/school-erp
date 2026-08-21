@@ -42,7 +42,7 @@ export default function Bulletins() {
     if (!eleve) return;
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`/api/bulletins/generate?eleveId=${eleve.id}&semestre=${semestre}&currentYearScolaire=${currentYear}`, {
+      const response = await fetch(`/api/bulletins/generate?eleveId=${eleve.id}&semestre=${semestre}&anneeScolaire=${currentYear}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/pdf',
@@ -71,7 +71,7 @@ export default function Bulletins() {
     setGeneratingAll(true);
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`/api/bulletins/classe/${selectedClasse}?semestre=${semestre}&currentYearScolaire=${currentYear}`, {
+      const response = await fetch(`/api/bulletins/classe/${selectedClasse}?semestre=${semestre}&anneeScolaire=${currentYear}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -100,7 +100,7 @@ export default function Bulletins() {
     if (!selectedClasse) return;
     setLoadingClassement(true);
     try {
-      const data = await fetchWithAuth(`/bulletins/classement?classeId=${selectedClasse}&semestre=${semestre}&currentYearScolaire=${currentYear}`);
+      const data = await fetchWithAuth(`/bulletins/classement?classeId=${selectedClasse}&semestre=${semestre}&anneeScolaire=${currentYear}`);
       setClassement(data);
     } catch (err) { console.error(err); }
     finally { setLoadingClassement(false); }

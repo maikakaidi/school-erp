@@ -36,7 +36,7 @@ export default function Coefficients() {
   const loadCoefficients = async () => {
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/coefficients?currentYearScolaire=${currentYear}`);
+      const data = await fetchWithAuth(`/coefficients?anneeScolaire=${currentYear}`);
       const map = {};
       data.forEach(c => {
         map[`${c.classeId}_${c.matiereId}`] = c.coefficient;
@@ -50,7 +50,7 @@ export default function Coefficients() {
     try {
       await fetchWithAuth('/coefficients', {
         method: 'POST',
-        body: JSON.stringify({ classeId, matiereId, coefficient: parseInt(coeff), currentYearScolaire: currentYear })
+        body: JSON.stringify({ classeId, matiereId, coefficient: parseInt(coeff), anneeScolaire: currentYear })
       });
       setCoeffs(prev => ({ ...prev, [`${classeId}_${matiereId}`]: coeff }));
       setEditing(null);

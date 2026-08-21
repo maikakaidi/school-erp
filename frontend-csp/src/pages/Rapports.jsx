@@ -101,7 +101,7 @@ export default function Rapports() {
             <TrendingUp size={16} color={T.green} />
             <div>
               <div style={{ fontFamily: "'Fraunces', serif", fontSize: 16, fontWeight: 900 }}>Assiduité par classe</div>
-              <div style={{ fontSize: 11, color: T.muted }}>Année {annee}</div>
+              <div style={{ fontSize: 11, color: T.muted }}>Année {currentYear}</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -113,8 +113,8 @@ export default function Rapports() {
               <option value="">Toutes les classes</option>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
             </select>
-            {btn('Excel', <Download size={13} />, () => download(`/rapports/assiduite/export?anneeScolaire=${annee}${classeId ? `&classeId=${classeId}` : ''}`), T.green)}
-            {btn('PDF', <Download size={13} />, () => download(`/rapports/assiduite/pdf?anneeScolaire=${annee}${classeId ? `&classeId=${classeId}` : ''}`))}
+            {btn('Excel', <Download size={13} />, () => download(`/rapports/assiduite/export?anneeScolaire=${currentYear}${classeId ? `&classeId=${classeId}` : ''}`), T.green)}
+            {btn('PDF', <Download size={13} />, () => download(`/rapports/assiduite/pdf?anneeScolaire=${currentYear}${classeId ? `&classeId=${classeId}` : ''}`))}
           </div>
         </div>
 
@@ -163,12 +163,12 @@ export default function Rapports() {
             <AlertTriangle size={16} color={T.red} />
             <div>
               <div style={{ fontFamily: "'Fraunces', serif", fontSize: 16, fontWeight: 900 }}>Paiements en retard</div>
-              <div style={{ fontSize: 11, color: T.muted }}>Année {annee} — {paiements?.total || 0} élève(s), {Number(paiements?.totalReste || 0).toLocaleString('fr-FR')} FCFA à recouvrer</div>
+              <div style={{ fontSize: 11, color: T.muted }}>Année {currentYear} — {paiements?.total || 0} élève(s), {Number(paiements?.totalReste || 0).toLocaleString('fr-FR')} FCFA à recouvrer</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            {btn('Excel', <Download size={13} />, () => download(`/rapports/paiements-en-retard/export?anneeScolaire=${annee}`), T.green)}
-            {btn('PDF', <Download size={13} />, () => download(`/rapports/paiements-en-retard/pdf?anneeScolaire=${annee}`), T.red)}
+            {btn('Excel', <Download size={13} />, () => download(`/rapports/paiements-en-retard/export?anneeScolaire=${currentYear}`), T.green)}
+            {btn('PDF', <Download size={13} />, () => download(`/rapports/paiements-en-retard/pdf?anneeScolaire=${currentYear}`), T.red)}
           </div>
         </div>
 

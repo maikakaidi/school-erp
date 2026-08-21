@@ -8,12 +8,17 @@ export const generate = async (req, res, next) => {
     if (!eleveId || !semestre || !anneeScolaire) {
       return res.status(400).json({ message: 'Paramètres manquants' });
     }
-    const pdfStream = await bulletinService.generateBulletinPDF(
-      req.user.schoolId,
-      eleveId,
-      parseInt(semestre),
-      anneeScolaire
-    );
+    let pdfStream;
+    try {
+      pdfStream = await bulletinService.generateBulletinPDF(
+        req.user.schoolId,
+        eleveId,
+        parseInt(semestre),
+        anneeScolaire
+      );
+    } catch (err) {
+      return res.status(400).json({ message: err.message });
+    }
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename=bulletin_${eleveId}_S${semestre}.pdf`);
     pdfStream.pipe(res);
@@ -58,14 +63,27 @@ export const generateAllBulletins = async (req, res, next) => {
       return res.status(404).json({ message: 'Aucun élève trouvé pour cette classe' });
     }
     const zip = new AdmZip();
+    let successCount = 0;
+    const skipped = [];
     for (const eleve of eleves) {
-      const pdfStream = await bulletinService.generateBulletinPDF(req.user.schoolId, eleve.id, parseInt(semestre), anneeScolaire);
-      const chunks = [];
-      for await (const chunk of pdfStream) {
-        chunks.push(chunk);
+      try {
+        const pdfStream = await bulletinService.generateBulletinPDF(req.user.schoolId, eleve.id, parseInt(semestre), anneeScolaire);
+        const chunks = [];
+        for await (const chunk of pdfStream) {
+          chunks.push(chunk);
+        }
+        const buffer = Buffer.concat(chunks);
+        zip.addFile(`bulletin_${eleve.matricule || eleve.id}_S${semestre}.pdf`, buffer);
+        successCount++;
+      } catch (err) {
+        skipped.push(`${eleve.nom} ${eleve.prenom}: ${err.message}`);
       }
-      const buffer = Buffer.concat(chunks);
-      zip.addFile(`bulletin_${eleve.matricule || eleve.id}_S${semestre}.pdf`, buffer);
+    }
+    if (successCount === 0) {
+      return res.status(400).json({
+        message: 'Aucun bulletin généré',
+        details: skipped.length > 0 ? skipped : ['Aucun élève avec des notes pour cette classe et ce semestre'],
+      });
     }
     const zipBuffer = zip.toBuffer();
     res.setHeader('Content-Type', 'application/zip');
