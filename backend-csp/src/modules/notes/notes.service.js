@@ -5,28 +5,38 @@ export const upsertNote = async (schoolId, data) => {
   if (await isYearArchived(schoolId, data.anneeScolaire)) {
     throw Object.assign(new Error('Cette année scolaire est archivée — modification impossible'), { status: 403 });
   }
-  const devoir = data.devoir || null;
-  const comp = data.composition || null;
+  const whereKey = {
+    eleveId_matiereId_semestre_anneeScolaire: {
+      eleveId: data.eleveId,
+      matiereId: data.matiereId,
+      semestre: data.semestre,
+      anneeScolaire: data.anneeScolaire,
+    },
+  };
+  const existing = await prisma.note.findUnique({ where: whereKey });
+
+  // Sémantique WYSIWYG :
+  // - champ envoyé (nombre ou null explicite) -> remplace la valeur (null = effacement volontaire)
+  // - champ omis (undefined) -> valeur existante préservée
+  const devoir1 = data.devoir !== undefined ? data.devoir : existing?.devoir1 ?? null;
+  const composition = data.composition !== undefined ? data.composition : existing?.composition ?? null;
+  const devoir2 = existing ? existing.devoir2 ?? null : null;
+  const appreciation =
+    data.appreciation !== undefined ? data.appreciation : existing?.appreciation ?? null;
+
   let moyenne = null;
-  if (devoir !== null && comp !== null) moyenne = (devoir + comp) / 2;
-  else if (devoir !== null) moyenne = devoir;
-  else if (comp !== null) moyenne = comp;
+  if (devoir1 !== null && composition !== null) moyenne = (devoir1 + composition) / 2;
+  else if (devoir1 !== null) moyenne = devoir1;
+  else if (composition !== null) moyenne = composition;
 
   return await prisma.note.upsert({
-    where: {
-      eleveId_matiereId_semestre_anneeScolaire: {
-        eleveId: data.eleveId,
-        matiereId: data.matiereId,
-        semestre: data.semestre,
-        anneeScolaire: data.anneeScolaire,
-      },
-    },
+    where: whereKey,
     update: {
-      devoir1: devoir,
-      devoir2: null,
-      composition: comp,
+      devoir1,
+      devoir2,
+      composition,
       moyenne,
-      appreciation: data.appreciation,
+      appreciation,
     },
     create: {
       eleveId: data.eleveId,
@@ -34,11 +44,11 @@ export const upsertNote = async (schoolId, data) => {
       classeId: data.classeId,
       semestre: data.semestre,
       anneeScolaire: data.anneeScolaire,
-      devoir1: devoir,
-      devoir2: null,
-      composition: comp,
+      devoir1,
+      devoir2,
+      composition,
       moyenne,
-      appreciation: data.appreciation,
+      appreciation,
       schoolId,
     },
   });

@@ -18,7 +18,18 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 )
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  });
+  if (import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  } else {
+    navigator.serviceWorker.getRegistrations()
+      .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+      .catch(() => {});
+    if (window.caches) {
+      caches.keys()
+        .then((keys) => Promise.all(keys.filter((k) => k.startsWith('api-school')).map((k) => caches.delete(k))))
+        .catch(() => {});
+    }
+  }
 }

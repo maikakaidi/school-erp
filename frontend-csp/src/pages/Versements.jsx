@@ -27,11 +27,11 @@ export default function Versements() {
   const getFraisForEleve = async (eleveId, annee) => {
     try {
       // 1. Récupérer l'inscription de l'élève pour l'année
-      const inscriptions = await fetchWithAuth(`/inscriptions?currentYear=${annee}`);
+      const inscriptions = await fetchWithAuth(`/inscriptions?anneeScolaire=${annee}`);
       const inscription = inscriptions.find(i => i.eleveId === eleveId);
       if (!inscription) return 300000; // valeur par défaut si pas d'inscription
       // 2. Récupérer les frais pour cette classe
-      const frais = await fetchWithAuth(`/frais/classe?classeId=${inscription.classeId}&currentYear=${annee}`);
+      const frais = await fetchWithAuth(`/frais/classe?classeId=${inscription.classeId}&anneeScolaire=${annee}`);
       return frais ? frais.total : 300000;
     } catch (err) {
       console.error('Erreur chargement frais', err);
@@ -63,7 +63,7 @@ export default function Versements() {
 
   const loadVersements = async (eleveId) => {
     try {
-      const data = await fetchWithAuth(`/versements/eleve?eleveId=${eleveId}&currentYear=${currentYear}`);
+      const data = await fetchWithAuth(`/versements/eleve?eleveId=${eleveId}&anneeScolaire=${currentYear}`);
       setVersements(data || []);
     } catch (err) { console.error(err); }
   };
@@ -71,7 +71,7 @@ export default function Versements() {
   const loadSituation = async (eleveId) => {
     try {
       const fraisTotal = await getFraisForEleve(eleveId, currentYear);
-      const data = await fetchWithAuth(`/versements/situation?eleveId=${eleveId}&currentYear=${currentYear}&fraisTotal=${fraisTotal}`);
+      const data = await fetchWithAuth(`/versements/situation?eleveId=${eleveId}&anneeScolaire=${currentYear}&fraisTotal=${fraisTotal}`);
       setSituation(data);
     } catch (err) { console.error(err); }
   };
@@ -85,7 +85,7 @@ export default function Versements() {
     try {
       const payload = {
         eleveId: eleve.id,
-        currentYear,
+        anneeScolaire: currentYear,
         tranche: form.tranche,
         montant: parseFloat(form.montant),
         reduction: parseFloat(form.reduction) || 0,
@@ -135,7 +135,7 @@ return (
     <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 24, color: T.text }}>{t('versements.title')}</h1>
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
       <p style={{ color: T.muted }}>{t('versements.subtitle')}</p>
-      <button onClick={() => downloadExcel(`/versements/export?currentYear=${currentYear}`, 'versements.xlsx')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 14px', color: T.muted, cursor: 'pointer', fontSize: 12 }}>
+      <button onClick={() => downloadExcel(`/versements/export?anneeScolaire=${currentYear}`, 'versements.xlsx')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 14px', color: T.muted, cursor: 'pointer', fontSize: 12 }}>
         <Download size={14} /> Excel
       </button>
     </div>

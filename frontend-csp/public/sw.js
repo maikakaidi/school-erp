@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'api-school-static-v4';
+const STATIC_CACHE = 'api-school-static-v6';
 const API_CACHE = 'api-school-api-v2';
 
 self.addEventListener('install', (event) => {
@@ -28,6 +28,16 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (request.method !== 'GET') return;
+
+  // Modules du serveur Vite (dev) : toujours reseau, jamais le cache
+  if (
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/node_modules/') ||
+    url.pathname.startsWith('/@vite/') ||
+    url.pathname.startsWith('/@fs/')
+  ) {
+    return;
+  }
 
   // API requests: network-first
   if (url.pathname.startsWith('/api/')) {

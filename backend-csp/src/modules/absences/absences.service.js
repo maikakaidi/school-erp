@@ -10,9 +10,9 @@ const includeAbsence = () => ({
   matiere: { select: { id: true, libelle: true } },
 });
 
-const getLatestClasseId = async (schoolId, eleveId) => {
+const getLatestClasseId = async (schoolId, eleveId, anneeScolaire = null) => {
   const inscription = await prisma.inscription.findFirst({
-    where: { schoolId, eleveId },
+    where: { schoolId, eleveId, ...(anneeScolaire ? { anneeScolaire } : {}) },
     orderBy: { dateInscription: 'desc' },
   });
   return inscription?.classeId || null;
@@ -127,10 +127,12 @@ export const createAbsence = async (schoolId, data) => {
   const eleve = await prisma.eleve.findFirst({ where: { id: data.eleveId, schoolId } });
   if (!eleve) throw new Error('Élève non trouvé');
 
-  const classeId = data.classeId || (await getLatestClasseId(schoolId, data.eleveId));
-  if (!classeId) throw new Error("Aucune classe trouvée pour cet élève (inscription requise)");
-
   const anneeScolaire = await resolveAcademicYear(schoolId, data.anneeScolaire || null, data.date);
+
+  const classeId = data.classeId
+    || (await getLatestClasseId(schoolId, data.eleveId, anneeScolaire))
+    || (await getLatestClasseId(schoolId, data.eleveId));
+  if (!classeId) throw new Error("Aucune classe trouvée pour cet élève (inscription requise)");
 
   const absence = await prisma.absence.create({
     data: {

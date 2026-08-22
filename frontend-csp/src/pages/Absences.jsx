@@ -182,7 +182,7 @@ export default function Absences() {
   const save = async () => {
     if (!form.eleveId || !form.date) return;
     try {
-      const payload = { ...form, matiereId: form.matiereId || undefined, motif: form.motif || undefined };
+      const payload = { ...form, classeId: form.classeId || undefined, matiereId: form.matiereId || undefined, motif: form.motif || undefined };
       if (modal === 'add') {
         const result = await fetchWithAuth('/absences', {
           method: 'POST',

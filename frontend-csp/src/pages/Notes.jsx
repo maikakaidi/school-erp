@@ -38,7 +38,7 @@ export default function Notes() {
     if (!classeId || !matiereId) return;
     setLoading(true);
     try {
-      const data = await fetchWithAuth(`/notes/classe?classeId=${classeId}&matiereId=${matiereId}&semestre=${semestre}&currentYear=${currentYear}`);
+      const data = await fetchWithAuth(`/notes/classe?classeId=${classeId}&matiereId=${matiereId}&semestre=${semestre}&anneeScolaire=${currentYear}`);
       setEleves(data);
     } catch (err) {
       console.error(err);
@@ -69,18 +69,20 @@ export default function Notes() {
   const saveNotes = async (eleveId, devoir, composition, appreciation) => {
     setSaving(true);
     try {
+      const payload = {
+        eleveId,
+        matiereId,
+        classeId,
+        semestre,
+        anneeScolaire: currentYear,
+        devoir: devoir !== '' && devoir !== null && devoir !== undefined ? parseFloat(devoir) : null,
+        composition: composition !== '' && composition !== null && composition !== undefined ? parseFloat(composition) : null,
+        appreciation: appreciation || '',
+      };
+      if (import.meta.env.DEV) console.log('PAYLOAD NOTES', payload);
       const result = await fetchWithAuth('/notes', {
         method: 'POST',
-        body: JSON.stringify({
-          eleveId,
-          matiereId,
-          classeId,
-          semestre,
-          currentYear,
-          devoir: devoir ? parseFloat(devoir) : null,
-          composition: composition ? parseFloat(composition) : null,
-          appreciation: appreciation || '',
-        }),
+        body: JSON.stringify(payload),
       });
       if (result?._pending) {
         setMessage('Note enregistrée (en attente de sync)');
@@ -107,7 +109,7 @@ export default function Notes() {
           <p style={{ color: T.muted }}>{t('notes.subtitle')}</p>
         </div>
         {classeId && (
-          <button onClick={() => downloadExcel(`/notes/export?classeId=${classeId}&semestre=${semestre}&currentYear=${currentYear}`, 'notes.xlsx')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 14px', color: T.muted, cursor: 'pointer', fontSize: 12 }}>
+          <button onClick={() => downloadExcel(`/notes/export?classeId=${classeId}&semestre=${semestre}&anneeScolaire=${currentYear}`, 'notes.xlsx')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 14px', color: T.muted, cursor: 'pointer', fontSize: 12 }}>
             <Download size={14} /> Excel
           </button>
         )}
