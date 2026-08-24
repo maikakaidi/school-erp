@@ -7,4 +7,10 @@ export const createMatiereSchema = z.object({
   groupeId: z.string().uuid().optional(),
 });
 
-export const updateMatiereSchema = createMatiereSchema.partial();
+// UPDATE : tolère explicitement groupeId null (une matière peut ne faire
+// partie d'aucun groupe ; représentation canonique = NULL en base,
+// cf. deleteMatiereGroupe qui écrit groupeId: null).
+// CREATE reste strict : il n'accepte que l'absence du champ.
+export const updateMatiereSchema = createMatiereSchema
+  .extend({ groupeId: z.string().uuid().nullish() })
+  .partial();

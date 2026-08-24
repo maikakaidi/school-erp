@@ -41,10 +41,14 @@ export default function Matieres() {
 
   const save = async () => {
     if (!form.libelle) return;
+    // Payload métier explicite : jamais la ligne API brute.
+    // groupeId non envoyé => le groupe existant reste inchangé côté serveur
+    // (l'affectation/détachement des groupes est gérée par MatieresConfig).
+    const payload = { libelle: form.libelle, code: form.code ?? '', type: form.type ?? '' };
     try {
       let url = '/matieres', method = 'POST';
       if (modal !== 'add') { url = `/matieres/${modal.id}`; method = 'PUT'; }
-      await fetchWithAuth(url, { method, body: JSON.stringify(form) });
+      await fetchWithAuth(url, { method, body: JSON.stringify(payload) });
       closeModal();
       loadMatieres();
     } catch (err) { alert(err.message); }
