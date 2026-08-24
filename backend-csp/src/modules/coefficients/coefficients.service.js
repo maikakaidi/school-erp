@@ -26,6 +26,15 @@ export const upsertCoefficient = async (schoolId, data) => {
   });
 };
 
+// « — » : la matière n'est pas enseignée dans cette classe.
+// Représentation canonique = ligne Coefficient absente => deleteMany idempotent.
+export const clearCoefficient = async (schoolId, data) => {
+  const { classeId, matiereId, anneeScolaire } = data;
+  return await prisma.coefficient.deleteMany({
+    where: { schoolId, classeId, matiereId, anneeScolaire },
+  });
+};
+
 export const deleteCoefficient = async (id, schoolId) => {
   return await prisma.coefficient.deleteMany({ where: { id, schoolId } });
 };

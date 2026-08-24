@@ -46,13 +46,34 @@ export default function Coefficients() {
     finally { setLoading(false); }
   };
 
+  // Conversion explicite pour l'API :
+  // - champ vide ou « — » => null (demande de suppression de la ligne)
+  // - valeur numérique finie => nombre (le backend exige un entier > 0)
+  // - valeur non numérique => refus local, jamais envoyée
+  //   (un NaN sérialisé deviendrait null en JSON => suppression accidentelle)
+  const toCoefficientPayload = (value) => {
+    const raw = String(value ?? '').trim();
+    if (raw === '' || raw === '—') return { coefficient: null };
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return { invalid: true };
+    return { coefficient: n };
+  };
+
   const handleSave = async (classeId, matiereId, coeff) => {
+    const payload = toCoefficientPayload(coeff);
+    if (payload.invalid) { alert(t('coefficients.invalid')); return; }
     try {
       await fetchWithAuth('/coefficients', {
         method: 'POST',
-        body: JSON.stringify({ classeId, matiereId, coefficient: parseInt(coeff), anneeScolaire: currentYear })
+        body: JSON.stringify({ classeId, matiereId, coefficient: payload.coefficient, anneeScolaire: currentYear })
       });
-      setCoeffs(prev => ({ ...prev, [`${classeId}_${matiereId}`]: coeff }));
+      setCoeffs(prev => {
+        const next = { ...prev };
+        const key = `${classeId}_${matiereId}`;
+        if (payload.coefficient === null) delete next[key];
+        else next[key] = payload.coefficient;
+        return next;
+      });
       setEditing(null);
     } catch (err) { alert(err.message); }
   };

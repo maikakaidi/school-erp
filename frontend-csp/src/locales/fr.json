@@ -334,7 +334,8 @@
     "title": "Coefficients",
     "subtitle": "Definir le coefficient de chaque matiere par classe (pour l'annee scolaire).",
     "anneeScolaire": "Annee scolaire :",
-    "classeMatiere": "Classe / Matiere"
+    "classeMatiere": "Classe / Matiere",
+    "invalid": "Coefficient invalide : saisir un entier positif, ou vider le champ pour \"—\"."
   },
   "enseignants": {
     "title": "Enseignants",

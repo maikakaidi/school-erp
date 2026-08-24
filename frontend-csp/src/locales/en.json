@@ -334,7 +334,8 @@
     "title": "Coefficients",
     "subtitle": "Set each subject's coefficient per class (for the school year).",
     "anneeScolaire": "School year:",
-    "classeMatiere": "Class / Subject"
+    "classeMatiere": "Class / Subject",
+    "invalid": "Invalid coefficient: enter a positive integer, or clear the field for \"—\"."
   },
   "enseignants": {
     "title": "Teachers",

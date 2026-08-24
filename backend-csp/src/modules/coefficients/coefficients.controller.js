@@ -19,7 +19,9 @@ export const getByClasse = async (req, res, next) => {
 export const upsert = async (req, res, next) => {
   try {
     const validated = createCoefficientSchema.parse(req.body);
-    const data = await coeffService.upsertCoefficient(req.user.schoolId, validated);
+    const data = validated.coefficient === null
+      ? await coeffService.clearCoefficient(req.user.schoolId, validated)
+      : await coeffService.upsertCoefficient(req.user.schoolId, validated);
     res.json(data);
   } catch (error) { next(error); }
 };
