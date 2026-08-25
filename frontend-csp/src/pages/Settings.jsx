@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { useAcademicYear } from '../context/AcademicYearContext';
-import { Clock, Archive, Copy, Plus, ChevronRight, Edit2, Trash2, X, Check } from 'lucide-react';
+import { Clock, Archive, Copy, Plus, ChevronRight, Edit2, Trash2, X, Check, CreditCard, AlertTriangle, RefreshCw } from 'lucide-react';
 
 const T = {
   card: '#0c1c2c', border: '#1a3050', accent: '#d4921a',
@@ -13,6 +13,7 @@ export default function Settings() {
   const { t } = useTranslation();
   const { years, currentYear, setCurrentYear, refresh: refreshYears } = useAcademicYear();
   const [settings, setSettings] = useState({});
+  const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
@@ -27,6 +28,7 @@ export default function Settings() {
 
   useEffect(() => {
     loadSettings();
+    loadSubscription();
   }, []);
 
   const loadSettings = async () => {
@@ -37,6 +39,23 @@ export default function Settings() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSubscription = async () => {
+    try {
+      const profile = await fetchWithAuth('/schools/profile');
+      if (profile) {
+        setSubscription({
+          subscriptionStatus: profile.subscriptionStatus,
+          subscriptionStart: profile.subscriptionStart,
+          subscriptionEnd: profile.subscriptionEnd,
+          trialDays: profile.trialDays,
+          createdAt: profile.createdAt,
+        });
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -247,6 +266,83 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Abonnement */}
+      {(() => {
+        const sub = subscription || {};
+        const subStatus = sub.subscriptionStatus || 'trial';
+        const now = new Date();
+        let daysRemaining = 0;
+        let startDate = null;
+        let endDate = null;
+        if (subStatus === 'active' && sub.subscriptionEnd) {
+          endDate = new Date(sub.subscriptionEnd);
+          daysRemaining = Math.max(0, Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)));
+          startDate = sub.subscriptionStart ? new Date(sub.subscriptionStart) : null;
+        } else if (subStatus === 'trial') {
+          const created = sub.createdAt ? new Date(sub.createdAt) : now;
+          const trialMs = (sub.trialDays || 15) * 24 * 60 * 60 * 1000;
+          endDate = new Date(created.getTime() + trialMs);
+          daysRemaining = Math.max(0, Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)));
+          startDate = created;
+        }
+        const isExpired = subStatus === 'expired' || subStatus === 'suspended';
+        const isLow = daysRemaining <= 7 && daysRemaining > 0 && !isExpired;
+        const statusColor = subStatus === 'active' ? T.green : subStatus === 'trial' ? T.accent : T.red;
+        const statusLabel = subStatus === 'active' ? t('common.active', 'Actif') : subStatus === 'trial' ? t('common.trial', 'Essai') : t('common.expired', 'Expiré');
+
+        return (
+          <div style={{ marginTop: 24, background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ color: T.text, margin: 0 }}>
+                <CreditCard size={16} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+                {t('settings.subscription', 'Abonnement')}
+              </h3>
+              <button onClick={loadSubscription} title={t('common.refresh', 'Actualiser')} style={{
+                padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                background: T.muted + '15', border: `1px solid ${T.muted}30`, color: T.muted, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+                <RefreshCw size={12} /> {t('common.refresh', 'Actualiser')}
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
+              <div style={{ padding: 14, borderRadius: 10, background: statusColor + '10', border: `1px solid ${statusColor}30` }}>
+                <div style={{ fontSize: 11, color: T.muted, marginBottom: 4 }}>{t('common.subscriptionStatus', 'Statut')}</div>
+                <span style={{
+                  fontSize: 12, padding: '3px 10px', borderRadius: 20,
+                  background: statusColor + '20', color: statusColor,
+                  border: `1px solid ${statusColor}40`, fontWeight: 700,
+                }}>{statusLabel}</span>
+              </div>
+              <div style={{ padding: 14, borderRadius: 10, background: T.bg, border: `1px solid ${T.border}` }}>
+                <div style={{ fontSize: 11, color: T.muted, marginBottom: 4 }}>{t('common.subscriptionStart', 'Date de début')}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{startDate ? startDate.toLocaleDateString('fr-FR') : '—'}</div>
+              </div>
+              <div style={{ padding: 14, borderRadius: 10, background: T.bg, border: `1px solid ${T.border}` }}>
+                <div style={{ fontSize: 11, color: T.muted, marginBottom: 4 }}>{t('common.expiresAt', 'Expire le')}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{endDate ? endDate.toLocaleDateString('fr-FR') : '—'}</div>
+              </div>
+              <div style={{ padding: 14, borderRadius: 10, background: isExpired ? T.red + '10' : isLow ? T.accent + '10' : T.bg, border: `1px solid ${isExpired ? T.red : isLow ? T.accent : T.border}30` }}>
+                <div style={{ fontSize: 11, color: T.muted, marginBottom: 4 }}>{t('common.daysRemaining', 'Jours restants')}</div>
+                <div style={{ fontSize: 18, fontFamily: "'Fraunces', serif", fontWeight: 900, color: isExpired ? T.red : isLow ? T.accent : T.text }}>{isExpired ? '0' : daysRemaining}</div>
+              </div>
+            </div>
+            {isLow && (
+              <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: T.accent + '15', border: `1px solid ${T.accent}30`, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: T.accent }}>
+                <AlertTriangle size={14} />
+                {t('settings.subscriptionLow', `Il ne reste que ${daysRemaining} jour(s). Veuillez renouveler votre abonnement.`)}
+              </div>
+            )}
+            {isExpired && (
+              <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: T.red + '15', border: `1px solid ${T.red}30`, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: T.red }}>
+                <AlertTriangle size={14} />
+                {t('settings.subscriptionExpired', 'Votre abonnement a expiré. Veuillez contacter le Super Admin pour le renouveler.')}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Années scolaires */}
       <div style={{ marginTop: 24, background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>

@@ -1,6 +1,6 @@
 import prisma from '../../config/database.js';
 import { createNotification, createNotificationsMany } from '../notifications/notifications.service.js';
-import { resolveAcademicYear } from '../academic-years/academicYears.service.js';
+import { resolveAcademicYear, isYearArchived } from '../academic-years/academicYears.service.js';
 
 const toMidday = (dateStr) => new Date(`${dateStr}T12:00:00.000Z`);
 
@@ -128,6 +128,9 @@ export const createAbsence = async (schoolId, data) => {
   if (!eleve) throw new Error('Élève non trouvé');
 
   const anneeScolaire = await resolveAcademicYear(schoolId, data.anneeScolaire || null, data.date);
+  if (await isYearArchived(schoolId, anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — modification impossible'), { status: 403 });
+  }
 
   const classeId = data.classeId
     || (await getLatestClasseId(schoolId, data.eleveId, anneeScolaire))
@@ -178,6 +181,9 @@ export const bulkCreateAbsences = async (schoolId, data) => {
   if (!classe) throw new Error('Classe non trouvée');
 
   const anneeScolaire = await resolveAcademicYear(schoolId, data.anneeScolaire || null, data.date);
+  if (await isYearArchived(schoolId, anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — modification impossible'), { status: 403 });
+  }
 
   const result = await prisma.absence.createMany({
     data: data.eleveIds.map((eleveId) => ({
@@ -222,6 +228,9 @@ export const updateAbsence = async (schoolId, id, data) => {
     err.status = 404;
     throw err;
   }
+  if (await isYearArchived(schoolId, existing.anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — modification impossible'), { status: 403 });
+  }
 
   const patch = {};
   if (data.date) patch.date = toMidday(data.date);
@@ -256,6 +265,10 @@ export const updateAbsence = async (schoolId, id, data) => {
 };
 
 export const deleteAbsence = async (schoolId, id) => {
+  const existing = await prisma.absence.findFirst({ where: { id, schoolId } });
+  if (existing && await isYearArchived(schoolId, existing.anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — suppression impossible'), { status: 403 });
+  }
   return await prisma.absence.deleteMany({ where: { id, schoolId } });
 };
 

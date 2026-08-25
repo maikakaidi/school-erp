@@ -2,7 +2,7 @@ import prisma from '../../config/database.js';
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import { createNotification } from '../notifications/notifications.service.js';
-import { resolveAcademicYear } from '../academic-years/academicYears.service.js';
+import { resolveAcademicYear, isYearArchived } from '../academic-years/academicYears.service.js';
 
 const generateMatricule = () =>
   `CSP${randomBytes(4).toString('hex').toUpperCase()}`;
@@ -170,6 +170,11 @@ export const createEleve = async (schoolId, data) => {
 
   const anneeScolaire = await resolveAcademicYear(schoolId, anneeInput);
 
+  // Bloquer inscription dans une année archivée
+  if (classeId && await isYearArchived(schoolId, anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — inscription impossible'), { status: 403 });
+  }
+
   // Créer élève
   const eleve = await prisma.eleve.create({
 
@@ -231,6 +236,11 @@ export const updateEleve = async (
   } = data;
 
   const anneeScolaire = await resolveAcademicYear(schoolId, anneeInput);
+
+  // Bloquer modification d'inscription dans une année archivée
+  if (classeId && await isYearArchived(schoolId, anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — modification impossible'), { status: 403 });
+  }
 
   // Mettre à jour élève (scopé par école)
   const updated = await prisma.eleve.updateMany({

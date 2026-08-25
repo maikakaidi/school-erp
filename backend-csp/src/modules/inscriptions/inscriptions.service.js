@@ -44,6 +44,10 @@ export const createInscription = async (schoolId, data) => {
 };
 
 export const updateInscription = async (id, schoolId, data) => {
+  const existing = await prisma.inscription.findFirst({ where: { id, schoolId } });
+  if (existing && await isYearArchived(schoolId, existing.anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — modification impossible'), { status: 403 });
+  }
   return await prisma.inscription.updateMany({
     where: { id, schoolId },
     data,
@@ -51,5 +55,9 @@ export const updateInscription = async (id, schoolId, data) => {
 };
 
 export const deleteInscription = async (id, schoolId) => {
+  const existing = await prisma.inscription.findFirst({ where: { id, schoolId } });
+  if (existing && await isYearArchived(schoolId, existing.anneeScolaire)) {
+    throw Object.assign(new Error('Cette année scolaire est archivée — suppression impossible'), { status: 403 });
+  }
   return await prisma.inscription.deleteMany({ where: { id, schoolId } });
 };

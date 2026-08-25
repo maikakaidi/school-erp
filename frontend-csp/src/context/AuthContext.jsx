@@ -58,6 +58,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('mustChangePassword');
+    localStorage.removeItem('school-subscription');
     setUser(null);
   }, []);
 
@@ -72,6 +73,15 @@ export function AuthProvider({ children }) {
     localStorage.setItem('refreshToken', refreshToken);
     if (mustChangePassword) localStorage.setItem('mustChangePassword', 'true');
     else localStorage.removeItem('mustChangePassword');
+    if (schoolData?.subscriptionStatus) {
+      localStorage.setItem('school-subscription', JSON.stringify({
+        subscriptionStatus: schoolData.subscriptionStatus,
+        subscriptionStart: schoolData.subscriptionStart || null,
+        subscriptionEnd: schoolData.subscriptionEnd || null,
+        trialDays: schoolData.trialDays ?? 15,
+        createdAt: schoolData.createdAt || null,
+      }));
+    }
     const decoded = decodeToken(accessToken);
     setUser({ token: accessToken, ...decoded, mustChangePassword: !!mustChangePassword, schoolName: schoolData?.name });
   };
