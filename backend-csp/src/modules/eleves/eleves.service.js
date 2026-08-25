@@ -23,6 +23,11 @@ export const getAllEleves = async (
   const where = {
     schoolId,
     isActive: true,
+    inscriptions: {
+      some: {
+        anneeScolaire,
+      },
+    },
   };
 
   // Recherche
@@ -335,7 +340,13 @@ export const deleteEleve = async (
 export const exportEleves = async (schoolId, anneeScolaire = null) => {
   anneeScolaire = await resolveAcademicYear(schoolId, anneeScolaire);
   const eleves = await prisma.eleve.findMany({
-    where: { schoolId, isActive: true },
+    where: {
+      schoolId,
+      isActive: true,
+      inscriptions: {
+        some: { anneeScolaire },
+      },
+    },
     include: {
       inscriptions: {
         where: { anneeScolaire },

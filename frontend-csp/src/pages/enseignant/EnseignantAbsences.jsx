@@ -44,7 +44,7 @@ export default function EnseignantAbsences() {
     setLoading(true);
     try {
       const q = new URLSearchParams();
-      if (currentYear?.name) q.set('anneeScolaire', currentYear.name);
+      if (currentYear) q.set('anneeScolaire', currentYear);
       if (classeId) q.set('classeId', classeId);
       if (type && type !== 'tous') q.set('type', type);
       if (dateDebut) q.set('dateDebut', dateDebut);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, X, Check, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import { useAcademicYear } from '../context/AcademicYearContext';
 import PendingBadge from '../components/PendingBadge';
 import { downloadExcel } from '../api/downloadExcel';
 
@@ -35,6 +36,7 @@ const emptyForm = {
 
 export default function Eleves() {
   const { t } = useTranslation();
+  const { currentYear } = useAcademicYear();
   const [eleves, setEleves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -51,7 +53,9 @@ export default function Eleves() {
   useEffect(() => {
     const loadClasses = async () => {
       try {
-        const data = await fetchWithAuth('/classes?limit=100');
+        let url = '/classes?limit=100';
+        if (currentYear) url += `&anneeScolaire=${currentYear}`;
+        const data = await fetchWithAuth(url);
         setClasses(data.classes || []);
       } catch (err) {
         console.error('Erreur chargement classes', err);
@@ -65,12 +69,15 @@ export default function Eleves() {
     };
     loadClasses();
     loadGroupes();
-  }, []);
+  }, [currentYear]);
 
   const loadEleves = async () => {
     setLoading(true);
     try {
       let url = `/eleves?page=${page}&limit=15&search=${encodeURIComponent(search)}`;
+      if (currentYear) {
+        url += `&anneeScolaire=${currentYear}`;
+      }
       if (classeFilter !== 'Toutes') {
         url += `&classeId=${classeFilter}`;
       }
@@ -87,13 +94,13 @@ export default function Eleves() {
 
   useEffect(() => {
     loadEleves();
-  }, [page, search, classeFilter]);
+  }, [page, search, classeFilter, currentYear]);
 
   useEffect(() => {
     const handler = () => loadEleves();
     window.addEventListener('sync-complete', handler);
     return () => window.removeEventListener('sync-complete', handler);
-  }, [page, search, classeFilter]);
+  }, [page, search, classeFilter, currentYear]);
 
   const openAdd = () => {
     setForm(emptyForm);
@@ -144,6 +151,7 @@ export default function Eleves() {
         nomParent: form.nomParent,
         adresseParent: form.adresseParent,
         telParent: form.telParent,
+        anneeScolaire: currentYear || undefined,
         classeId: form.classeId || undefined,
         langueChoisie: form.langueChoisie || undefined,
         password: form.password || undefined,
@@ -199,7 +207,7 @@ export default function Eleves() {
           <p style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{t('eleves.subtitle', { count: total })}</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => downloadExcel('/eleves/export', 'eleves.xlsx')} style={{
+          <button onClick={() => downloadExcel(`/eleves/export${currentYear ? `?anneeScolaire=${currentYear}` : ''}`, 'eleves.xlsx')} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px',
             background: T.card, border: `1px solid ${T.border}`, borderRadius: 10,
             color: T.muted, cursor: 'pointer', fontSize: 12,

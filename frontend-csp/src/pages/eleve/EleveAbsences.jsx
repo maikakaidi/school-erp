@@ -16,7 +16,7 @@ export default function EleveAbsences() {
 
   useEffect(() => {
     let cancelled = false;
-    const params = currentYear?.name ? `?anneeScolaire=${currentYear.name}` : '';
+    const params = currentYear ? `?anneeScolaire=${currentYear}` : '';
     fetchWithAuth(`/eleve/absences${params}`)
       .then((d) => { if (!cancelled) setData(d); })
       .catch(() => {})

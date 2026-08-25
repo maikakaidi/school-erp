@@ -83,7 +83,7 @@ export default function Absences() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page, limit: 15 });
-      if (currentYear?.name) params.set('anneeScolaire', currentYear.name);
+      if (currentYear) params.set('anneeScolaire', currentYear);
       if (search) params.set('search', search);
       if (classeFilter) params.set('classeId', classeFilter);
       if (typeFilter && typeFilter !== 'tous') params.set('type', typeFilter);
@@ -273,7 +273,7 @@ export default function Absences() {
           <p style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{t('absences.subtitle', { count: total })}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={() => downloadExcel(`/absences/export${currentYear?.name ? `?anneeScolaire=${currentYear.name}` : ''}`, 'absences.xlsx')} style={{
+          <button onClick={() => downloadExcel(`/absences/export${currentYear ? `?anneeScolaire=${currentYear}` : ''}`, 'absences.xlsx')} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px',
             background: T.card, border: `1px solid ${T.border}`, borderRadius: 10,
             color: T.muted, cursor: 'pointer', fontSize: 12,

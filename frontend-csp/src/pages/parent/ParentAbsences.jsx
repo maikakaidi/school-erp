@@ -22,7 +22,7 @@ export default function ParentAbsences() {
     if (!selectedChildId) return;
     let cancelled = false;
     setLoading(true);
-    const params = `childId=${selectedChildId}${currentYear?.name ? `&anneeScolaire=${currentYear.name}` : ''}`;
+    const params = `childId=${selectedChildId}${currentYear ? `&anneeScolaire=${currentYear}` : ''}`;
     fetchWithAuth(`/parent/absences?${params}`)
       .then((d) => { if (!cancelled) setData(d); })
       .catch(() => {})

@@ -58,18 +58,6 @@ export const getAllClasses = async (
     ],
   });
 
-  // Fallback: si aucun résultat avec le filtre année, retourner toutes les classes actives
-  if (all.length === 0 && where.anneeScolaire) {
-    delete where.anneeScolaire;
-    all = await prisma.classe.findMany({
-      where,
-      include: {
-        inscriptions: { include: { eleve: true } },
-      },
-      orderBy: [{ niveau: 'asc' }, { nom: 'asc' }],
-    });
-  }
-
   // Dédoublonner par nom normalisé (accents, casse)
   const seen = new Map();
   for (const c of all) {

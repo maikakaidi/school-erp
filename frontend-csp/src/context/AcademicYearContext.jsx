@@ -37,12 +37,18 @@ export function AcademicYearProvider({ children }) {
   }, [fetchYears]);
 
   const setCurrentYear = useCallback(async (yearId) => {
+    const year = years.find(y => y.id === yearId);
+    if (year?.isArchived) {
+      setCurrentYearState(year.name);
+      localStorage.setItem('currentYearName', year.name);
+      return;
+    }
     await fetchWithAuth('/academic-years/set-current', {
       method: 'POST',
       body: JSON.stringify({ yearId }),
     });
     await fetchYears();
-  }, [fetchYears]);
+  }, [fetchYears, years]);
 
   return (
     <AcademicYearContext.Provider value={{ years, currentYear, setCurrentYear, loading, refresh: fetchYears }}>
