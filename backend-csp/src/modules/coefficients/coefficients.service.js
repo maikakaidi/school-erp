@@ -2,7 +2,7 @@ import prisma from '../../config/database.js';
 
 export const getAllCoefficients = async (schoolId, anneeScolaire) => {
   return await prisma.coefficient.findMany({
-    where: { schoolId, anneeScolaire, matiere: { isActive: true, groupeId: null } },
+    where: { schoolId, anneeScolaire, matiere: { isActive: true } },
     include: { classe: true, matiere: true },
     orderBy: { classe: { nom: 'asc' } },
   });
@@ -10,7 +10,7 @@ export const getAllCoefficients = async (schoolId, anneeScolaire) => {
 
 export const getCoefficientsByClasse = async (schoolId, classeId, anneeScolaire) => {
   return await prisma.coefficient.findMany({
-    where: { schoolId, classeId, anneeScolaire, matiere: { isActive: true, groupeId: null } },
+    where: { schoolId, classeId, anneeScolaire, matiere: { isActive: true } },
     include: { matiere: true },
   });
 };

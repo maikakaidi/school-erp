@@ -209,6 +209,55 @@ describe('Coefficients Flux POST — upsert vs clear', () => {
       'la ligne de l\'autre école doit rester intacte');
   });
 
+  it('T9. coeff propre Arabe (groupeId≠null) upsert OK via POST', async () => {
+    const ARABE = '550e8400-e29b-41d4-a716-446655440010';
+    const { result, nextError } = await callUpsert({ classeId: CLASSE, matiereId: ARABE, anneeScolaire: ANNEE, coefficient: 4 });
+    assert.ok(!nextError, `erreur inattendue: ${nextError}`);
+    assert.strictEqual(result.coefficient, 4);
+    assert.strictEqual(result.matiereId, ARABE);
+  });
+
+  it('T10. coeff propre Espagnol (groupeId≠null) upsert OK via POST', async () => {
+    const ESP = '550e8400-e29b-41d4-a716-446655440011';
+    const { result, nextError } = await callUpsert({ classeId: CLASSE, matiereId: ESP, anneeScolaire: ANNEE, coefficient: 3 });
+    assert.ok(!nextError, `erreur inattendue: ${nextError}`);
+    assert.strictEqual(result.coefficient, 3);
+  });
+
+  it('T11. getAllCoefficients ne filtre PLUS par groupeId:null', async () => {
+    const svc = await import('../modules/coefficients/coefficients.service.js');
+    let capturedWhere = null;
+    const realFindMany = prisma.coefficient.findMany;
+    prisma.coefficient.findMany = async ({ where }) => { capturedWhere = where; return []; };
+    try {
+      await svc.getAllCoefficients(SCHOOL, ANNEE);
+    } finally {
+      prisma.coefficient.findMany = realFindMany;
+    }
+    assert.ok(capturedWhere, 'findMany doit être appelé');
+    assert.strictEqual(capturedWhere.matiere.groupeId, undefined,
+      'groupeId:null ne doit PLUS être dans le filtre');
+    assert.deepStrictEqual(capturedWhere.matiere, { isActive: true },
+      'le filtre doit être uniquement isActive:true');
+  });
+
+  it('T12. getCoefficientsByClasse ne filtre PLUS par groupeId:null', async () => {
+    const svc = await import('../modules/coefficients/coefficients.service.js');
+    let capturedWhere = null;
+    const realFindMany = prisma.coefficient.findMany;
+    prisma.coefficient.findMany = async ({ where }) => { capturedWhere = where; return []; };
+    try {
+      await svc.getCoefficientsByClasse(SCHOOL, CLASSE, ANNEE);
+    } finally {
+      prisma.coefficient.findMany = realFindMany;
+    }
+    assert.ok(capturedWhere, 'findMany doit être appelé');
+    assert.strictEqual(capturedWhere.matiere.groupeId, undefined,
+      'groupeId:null ne doit PLUS être dans le filtre');
+    assert.deepStrictEqual(capturedWhere.matiere, { isActive: true },
+      'le filtre doit être uniquement isActive:true');
+  });
+
   it('clearCoefficient exporté; deleteMany cible schoolId+classe+matière+année', async () => {
     const svc = await import('../modules/coefficients/coefficients.service.js');
     assert.strictEqual(typeof svc.clearCoefficient, 'function');
