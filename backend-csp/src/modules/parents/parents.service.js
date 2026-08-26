@@ -32,7 +32,7 @@ const includeParent = () => ({
   },
 });
 
-export const getAllParents = async (schoolId, { search } = {}) => {
+export const getAllParents = async (schoolId, { search, anneeScolaire } = {}) => {
   const where = { schoolId };
   if (search) {
     where.OR = [
@@ -40,6 +40,17 @@ export const getAllParents = async (schoolId, { search } = {}) => {
       { telephone: { contains: search } },
     ];
   }
+
+  if (anneeScolaire) {
+    const eleveIdsWithInscription = await prisma.inscription.findMany({
+      where: { schoolId, anneeScolaire },
+      select: { eleveId: true },
+    });
+    const eleveIds = [...new Set(eleveIdsWithInscription.map(i => i.eleveId))];
+    if (eleveIds.length === 0) return [];
+    where.eleves = { some: { eleveId: { in: eleveIds } } };
+  }
+
   return await prisma.parent.findMany({
     where,
     include: includeParent(),

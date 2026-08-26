@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Edit2, Trash2, X, Check, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchWithAuth } from '../api/fetchWithAuth';
+import { useAcademicYear } from '../context/AcademicYearContext';
 
 const T = {
   card: '#0c1c2c',
@@ -27,6 +28,7 @@ const emptyForm = {
 
 export default function Parents() {
   const { t } = useTranslation();
+  const { currentYear } = useAcademicYear();
   const [parents, setParents] = useState([]);
   const [eleves, setEleves] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,8 @@ export default function Parents() {
   const loadParents = async () => {
     setLoading(true);
     try {
-      const url = `/parents?search=${encodeURIComponent(search)}`;
+      let url = `/parents?search=${encodeURIComponent(search)}`;
+      if (currentYear) url += `&anneeScolaire=${currentYear}`;
       const data = await fetchWithAuth(url);
       setParents(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -51,7 +54,9 @@ export default function Parents() {
 
   const loadEleves = async () => {
     try {
-      const data = await fetchWithAuth('/eleves?page=1&limit=10000');
+      let url = '/eleves?page=1&limit=10000';
+      if (currentYear) url += `&anneeScolaire=${currentYear}`;
+      const data = await fetchWithAuth(url);
       setEleves(data.eleves || []);
     } catch (err) {
       console.error('Erreur chargement élèves', err);
@@ -60,11 +65,11 @@ export default function Parents() {
 
   useEffect(() => {
     loadParents();
-  }, [search]);
+  }, [search, currentYear]);
 
   useEffect(() => {
     loadEleves();
-  }, []);
+  }, [currentYear]);
 
   const filteredEleves = useMemo(() => {
     if (!eleveSearch) return eleves;

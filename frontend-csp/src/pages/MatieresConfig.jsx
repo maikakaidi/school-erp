@@ -33,8 +33,9 @@ export default function MatieresConfig() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!currentYear) return;
     Promise.all([
-      fetchWithAuth('/classes?limit=100'),
+      fetchWithAuth(`/classes?anneeScolaire=${currentYear}&limit=100`),
       fetchWithAuth('/matieres'),
       fetchWithAuth(`/coefficients?anneeScolaire=${currentYear}`)
     ]).then(([c, m, co]) => {

@@ -3,8 +3,8 @@ import { createParentSchema, updateParentSchema } from './parents.validation.js'
 
 export const getAll = async (req, res, next) => {
   try {
-    const { search } = req.query;
-    const parents = await parentsService.getAllParents(req.user.schoolId, { search });
+    const { search, anneeScolaire } = req.query;
+    const parents = await parentsService.getAllParents(req.user.schoolId, { search, anneeScolaire });
     res.json(parents);
   } catch (error) { next(error); }
 };

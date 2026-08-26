@@ -19,17 +19,18 @@ export default function Coefficients() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!currentYear) return;
     Promise.all([
-      fetchWithAuth('/classes?limit=100'),
+      fetchWithAuth(`/classes?anneeScolaire=${currentYear}&limit=100`),
       fetchWithAuth('/matieres')
     ]).then(([c, m]) => {
       setClasses(c.classes || []);
       setMatieres((m || []).filter(mat => mat.isActive !== false));
     }).catch(console.error);
-  }, []);
+  }, [currentYear]);
 
   useEffect(() => {
-    if (classes.length === 0 || matieres.length === 0) return;
+    if (!currentYear || classes.length === 0 || matieres.length === 0) return;
     loadCoefficients();
   }, [currentYear, classes, matieres]);
 

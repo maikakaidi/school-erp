@@ -1,3 +1,20 @@
+export const DEFAULT_CLASSES = [
+  { nom: '6eme A', niveau: '6eme' },
+  { nom: '6eme B', niveau: '6eme' },
+  { nom: '5eme A', niveau: '5eme' },
+  { nom: '5eme B', niveau: '5eme' },
+  { nom: '4eme A', niveau: '4eme' },
+  { nom: '4eme B', niveau: '4eme' },
+  { nom: '3eme A', niveau: '3eme' },
+  { nom: '3eme B', niveau: '3eme' },
+  { nom: '2nde A', niveau: '2nde' },
+  { nom: '2nde C', niveau: '2nde' },
+  { nom: '1ere A', niveau: '1ere' },
+  { nom: '1ere D', niveau: '1ere' },
+  { nom: 'Terminale A', niveau: 'Terminale' },
+  { nom: 'Terminale D', niveau: 'Terminale' },
+];
+
 export const MATIERES_CATALOGUE = [
   { libelle: 'Mathématiques', code: 'MATH', type: 'scientifique' },
   { libelle: 'Physique Chimie', code: 'PC', type: 'scientifique' },

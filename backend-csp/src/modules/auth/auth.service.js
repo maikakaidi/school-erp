@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../../config/database.js';
 import { initializeDefaults } from '../defaults/defaults.service.js';
+import { DEFAULT_CLASSES } from '../defaults/defaults.template.js';
 
 const ACCESS_TTL = '8h';
 const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 jours
@@ -54,9 +55,33 @@ export const registerSchool = async (data) => {
   await prisma.schoolSetting.create({
     data: { schoolId: school.id }
   });
-  // Initialiser les matières et coefficients par défaut
+  // Initialiser l'année scolaire, les classes, les matières et coefficients par défaut
   try {
     const yearName = `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), 8, 1);   // 1 septembre
+    const endDate = new Date(now.getFullYear() + 1, 6, 31); // 31 juillet
+
+    await prisma.academicYear.create({
+      data: {
+        schoolId: school.id,
+        name: yearName,
+        isCurrent: true,
+        isArchived: false,
+        startDate,
+        endDate,
+      },
+    });
+
+    const classesData = DEFAULT_CLASSES.map(c => ({
+      schoolId: school.id,
+      nom: c.nom,
+      niveau: c.niveau,
+      anneeScolaire: yearName,
+      isActive: true,
+    }));
+    await prisma.classe.createMany({ data: classesData });
+
     await initializeDefaults(school.id, yearName);
   } catch (_) { /* pas bloquant si échec */ }
   const { accessToken, refreshToken } = await issueTokens(
