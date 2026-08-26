@@ -44,7 +44,7 @@ export const initializeDefaults = async (schoolId, anneeScolaire) => {
     }
   }
 
-  let created = 0;
+  const toCreate = [];
 
   for (const classe of classes) {
     const configKey = getConfigKey(classe);
@@ -57,29 +57,28 @@ export const initializeDefaults = async (schoolId, anneeScolaire) => {
       const matiere = catalogueMap.get(entry.libelle);
       if (!matiere) continue;
 
-      const existing = await prisma.coefficient.findFirst({
-        where: {
-          schoolId,
-          classeId: classe.id,
-          matiereId: matiere.id,
-          anneeScolaire,
-        },
+      toCreate.push({
+        schoolId,
+        classeId: classe.id,
+        matiereId: matiere.id,
+        anneeScolaire,
+        coefficient: entry.coefficient,
       });
-
-      if (!existing) {
-        await prisma.coefficient.create({
-          data: {
-            schoolId,
-            classeId: classe.id,
-            matiereId: matiere.id,
-            anneeScolaire,
-            coefficient: entry.coefficient,
-          },
-        });
-        created++;
-      }
     }
   }
 
-  return { message: 'Initialisation terminée', created, classesCount: classes.length };
+  if (toCreate.length > 0) {
+    const existing = await prisma.coefficient.findMany({
+      where: { schoolId, anneeScolaire, classeId: { in: classes.map(c => c.id) } },
+      select: { classeId: true, matiereId: true },
+    });
+    const existingSet = new Set(existing.map(e => `${e.classeId}|${e.matiereId}`));
+    const filtered = toCreate.filter(c => !existingSet.has(`${c.classeId}|${c.matiereId}`));
+    if (filtered.length > 0) {
+      await prisma.coefficient.createMany({ data: filtered, skipDuplicates: true });
+    }
+    return { message: 'Initialisation terminée', created: filtered.length, skipped: toCreate.length - filtered.length, classesCount: classes.length };
+  }
+
+  return { message: 'Initialisation terminée', created: 0, classesCount: classes.length };
 };

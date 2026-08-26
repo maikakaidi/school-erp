@@ -1,4 +1,6 @@
 import prisma from '../../config/database.js';
+import { DEFAULT_CLASSES } from '../defaults/defaults.template.js';
+import { initializeDefaults } from '../defaults/defaults.service.js';
 
 export const getYears = async (schoolId) => {
   return prisma.academicYear.findMany({
@@ -40,7 +42,6 @@ export const createYear = async (schoolId, { name, startDate, endDate }) => {
   });
   if (existing) throw Object.assign(new Error('Cette année scolaire existe déjà'), { status: 409 });
 
-  // Générer les dates par défaut à partir du nom (ex: "AAAA-BBBB" → sept AAAA - juin BBBB)
   if (!startDate || !endDate) {
     const match = name.match(/^(\d{4})-(\d{4})$/);
     if (match) {
@@ -55,9 +56,79 @@ export const createYear = async (schoolId, { name, startDate, endDate }) => {
   const count = await prisma.academicYear.count({ where: { schoolId } });
   const isCurrent = count === 0;
 
-  return prisma.academicYear.create({
+  const year = await prisma.academicYear.create({
     data: { schoolId, name, startDate: new Date(startDate), endDate: new Date(endDate), isCurrent },
   });
+
+  // Auto-init: vérifier si l'école a déjà des classes d'une autre année
+  const sourceClasses = await prisma.classe.findMany({
+    where: { schoolId, isActive: true },
+    orderBy: { createdAt: 'desc' },
+    distinct: ['nom'],
+  });
+
+  if (sourceClasses.length > 0) {
+    // Copier les classes existantes vers la nouvelle année
+    const classesData = sourceClasses.map(c => ({
+      schoolId,
+      nom: c.nom,
+      niveau: c.niveau,
+      anneeScolaire: name,
+      capacite: c.capacite,
+      isActive: true,
+    }));
+    await prisma.classe.createMany({ data: classesData, skipDuplicates: true });
+
+    // Copier les coefficients de l'année source la plus récente
+    const sourceYear = await prisma.academicYear.findFirst({
+      where: { schoolId, id: { not: year.id } },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (sourceYear) {
+      const sourceCoeffs = await prisma.coefficient.findMany({
+        where: { schoolId, anneeScolaire: sourceYear.name },
+      });
+      if (sourceCoeffs.length > 0) {
+        const newClasses = await prisma.classe.findMany({
+          where: { schoolId, anneeScolaire: name },
+        });
+        const oldClasses = await prisma.classe.findMany({
+          where: { schoolId, anneeScolaire: sourceYear.name },
+        });
+        const oldIdToNom = new Map(oldClasses.map(c => [c.id, c.nom]));
+        const classeNameToId = new Map(newClasses.map(c => [c.nom, c.id]));
+        const coeffData = sourceCoeffs
+          .map(sc => {
+            const nom = oldIdToNom.get(sc.classeId);
+            const targetClasseId = nom ? classeNameToId.get(nom) : null;
+            return targetClasseId ? {
+              schoolId,
+              classeId: targetClasseId,
+              matiereId: sc.matiereId,
+              coefficient: sc.coefficient,
+              anneeScolaire: name,
+            } : null;
+          })
+          .filter(Boolean);
+        if (coeffData.length > 0) {
+          await prisma.coefficient.createMany({ data: coeffData, skipDuplicates: true });
+        }
+      }
+    }
+  } else {
+    // Pas de classes existantes → créer les classes par défaut
+    const classesData = DEFAULT_CLASSES.map(c => ({
+      schoolId,
+      nom: c.nom,
+      niveau: c.niveau,
+      anneeScolaire: name,
+      isActive: true,
+    }));
+    await prisma.classe.createMany({ data: classesData });
+    await initializeDefaults(schoolId, name);
+  }
+
+  return year;
 };
 
 export const setCurrent = async (schoolId, yearId) => {
