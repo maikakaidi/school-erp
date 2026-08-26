@@ -5,9 +5,9 @@ import assert from 'node:assert';
 //  1. DEFAULTS TEMPLATE — DEFAULT_CLASSES
 // ═══════════════════════════════════════════════════════
 describe('Defaults Template — DEFAULT_CLASSES', () => {
-it('1. DEFAULT_CLASSES est exporté et contient 17 classes', async () => {
+it('1. DEFAULT_CLASSES est exporté et contient 16 classes', async () => {
     const { DEFAULT_CLASSES } = await import('../modules/defaults/defaults.template.js');
-    assert.strictEqual(DEFAULT_CLASSES.length, 17);
+    assert.strictEqual(DEFAULT_CLASSES.length, 16);
   });
   it('2. Toutes les classes ont nom et niveau', async () => {
     const { DEFAULT_CLASSES } = await import('../modules/defaults/defaults.template.js');
