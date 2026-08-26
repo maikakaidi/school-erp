@@ -8,10 +8,13 @@ export const DEFAULT_CLASSES = [
   { nom: '3eme A', niveau: '3eme' },
   { nom: '3eme B', niveau: '3eme' },
   { nom: '2nde A', niveau: '2nde' },
+  { nom: '2nde B', niveau: '2nde' },
   { nom: '2nde C', niveau: '2nde' },
   { nom: '1ere A', niveau: '1ere' },
+  { nom: '1ere C', niveau: '1ere' },
   { nom: '1ere D', niveau: '1ere' },
   { nom: 'Terminale A', niveau: 'Terminale' },
+  { nom: 'Terminale C', niveau: 'Terminale' },
   { nom: 'Terminale D', niveau: 'Terminale' },
 ];
 
